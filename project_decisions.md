@@ -165,3 +165,31 @@ JPY／KRW 這類無小數幣別會顯示成 `12000.00`。
 3. 最近同行者
 4. 旅行工具（行李清單、待辦、Visit Japan Web QR）
 5. AI 導遊（屆時決定 Gemini API key 存放與付費方）
+
+---
+
+## D16. AI 導遊：各自的 Gemini API Key，只存在裝置上（待使用者確認）
+
+**決定**：每位使用者在自己的裝置填入 Google Gemini API Key（`lib/gemini.ts`，localStorage），
+不上傳、不分享給群組。Key 放在 `x-goog-api-key` 標頭而不是網址。模型固定為常數 `GEMINI_MODEL`
+（目前 `gemini-3.6-flash`；`gemini-2.5-flash` 將於 2026-10-16 停用）。
+
+**原因**：共用一把 Key 必須藏在伺服器端（Cloud Functions），會脫離免費方案（同 D6）；
+放在 bundle 或 Firestore 等於公開。AI 回傳的 JSON 視為不可信輸入，`lib/ai.ts` 逐欄驗證、
+過濾旅行日期外的項目，並且一律先預覽、由使用者勾選後才寫入。
+
+**代價**：每個人要自己申請 Key；換裝置要重填。
+
+---
+
+## D17. 旅行工具的資料放置（待使用者確認）
+
+**決定**：
+- 行李清單是個人的：`users/{uid}/packing`（以 `groupId` 篩選），只有本人可讀寫。
+- 共同待辦是群組的：`groups/{id}/todos`，全員可編輯。
+- 入境 QR（Visit Japan Web 等）只存在裝置 localStorage，每個群組一組，縮成 900px PNG。
+
+**原因**：行李是個人物品；待辦（訂位、買票）通常要分工。QR 是個人證件且機場常沒網路，
+存在本機才能離線打開，也避免上傳敏感資料。
+
+**代價**：QR 換裝置要重新上傳；刪除群組不會刪到成員各自的行李清單（其他人無權刪除）。

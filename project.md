@@ -20,18 +20,23 @@
 
 ```
 src/
-├── types/        models.ts（UserProfile / Group / Entry / Transfer）· currency.ts
-├── lib/          firebase · money · settlement · calc · geo · random
-├── data/         currencies.ts（唯一的幣別清單，含小數位數與國別對應）
-├── services/     users · groups · entries      ← 唯一碰 Firestore 的一層
+├── types/        models.ts（UserProfile / Group / Entry / ItineraryItem / Invitation / ChecklistItem）· currency.ts
+├── lib/          firebase · money · settlement · stats · itinerary · dates · calc · geo · line
+│                 ai（提示詞＋回應驗證）· gemini（API 呼叫＋裝置端 Key）· entryQr · random
+├── data/         currencies · countries · categories
+├── services/     users · groups · entries · itinerary · invitations · checklists   ← 唯一碰 Firestore 的一層
+│                 contacts（可邀請的人；未來朋友系統的接口）
 ├── stores/       auth · groups · rates
-├── composables/  useGroupDetail · useToast · useConfirm · useTheme
+├── composables/  useGroupDetail · useInvite · useToast · useConfirm · useTheme
 ├── components/
 │   ├── ui/       AppButton · AppSheet · AppDialog · AppInput · AppField
 │   │             AppAvatar · AppSkeleton · AppEmptyState · ToastHost
 │   ├── layout/   AppShell · TopBar · BottomNav
-│   ├── currency/ CurrencyPicker · AmountInput
+│   ├── charts/   ChartCanvas（Chart.js，lazy load）
+│   ├── currency/ CurrencyPicker · CountryPicker · AmountInput
 │   └── group/    GroupCard · EntryRow · MemberStrip · EntrySheet · SettlementSheet
+│                 GroupItinerary · ItinerarySheet · GroupStats · GroupTools · ChecklistCard
+│                 InviteSheet · InvitationList · AiGuideSheet
 ├── views/        Login · Join · Onboarding · Groups · GroupDetail · Calculator · Profile
 ├── i18n/         index.ts · en.ts · zh-TW.ts
 ├── router/       index.ts
@@ -98,6 +103,9 @@ view 不得直接 import `firebase/firestore`。
 - **旅行工具**（工具分頁）：行李清單是個人的（`users/{uid}/packing`，以 `groupId` 篩選，只有本人可讀）；
   共同待辦是全群組的（`groups/{id}/todos`）。入境 QR（如 Visit Japan Web）只存在裝置 localStorage
   （`lib/entryQr.ts`，縮至 900px PNG），因為是個人證件、且機場常沒網路。刪除群組不會刪到成員的個人行李清單。
+
+- **AI 導遊**（行程分頁）：產生行程／調整行程／解析訂位三種模式，使用者自己的 Gemini Key
+  （只存在裝置，見 D16）。回應經 `lib/ai.ts` 驗證，預覽勾選後才寫入行程。
 
 詳見 `src/types/models.ts`。
 

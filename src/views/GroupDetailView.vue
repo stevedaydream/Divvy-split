@@ -9,6 +9,7 @@ import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 import EntryRow from '@/components/group/EntryRow.vue'
 import EntrySheet from '@/components/group/EntrySheet.vue'
+import AiGuideSheet from '@/components/group/AiGuideSheet.vue'
 import GroupItinerary from '@/components/group/GroupItinerary.vue'
 import GroupStats from '@/components/group/GroupStats.vue'
 import GroupTools from '@/components/group/GroupTools.vue'
@@ -230,6 +231,7 @@ async function remove(entry: Entry): Promise<void> {
 
 /** Share the link, or invite someone you have travelled with before. */
 const inviteSheetOpen = ref(false)
+const aiSheetOpen = ref(false)
 function copyInvite(): void {
   inviteSheetOpen.value = true
 }
@@ -290,6 +292,7 @@ function copyInvite(): void {
         @edit="openEditItem"
         @record="recordItem"
         @set-dates="setTripDates"
+        @ai="aiSheetOpen = true"
       />
 
       <template v-else>
@@ -399,6 +402,15 @@ function copyInvite(): void {
         :locale="locale"
         @close="settleSheetOpen = false"
         @record="recordTransfer"
+      />
+
+      <AiGuideSheet
+        :open="aiSheetOpen"
+        :group="group"
+        :items="itinerary"
+        :uid="auth.uid ?? ''"
+        :locale="locale"
+        @close="aiSheetOpen = false"
       />
 
       <InviteSheet :open="inviteSheetOpen" :group="group" @close="inviteSheetOpen = false" />

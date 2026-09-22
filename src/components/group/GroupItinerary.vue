@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, BedDouble, CalendarDays, MapPin, Plane, Plus, ReceiptText } from 'lucide-vue-next'
+import { AlertTriangle, BedDouble, CalendarDays, MapPin, Plane, Plus, ReceiptText, Sparkles } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
 import { categoryEmoji } from '@/data/categories'
 import { formatDay, todayIso } from '@/lib/dates'
@@ -20,6 +20,7 @@ const emit = defineEmits<{
   edit: [item: ItineraryItem]
   record: [item: ItineraryItem]
   setDates: [start: string, end: string]
+  ai: []
 }>()
 
 const { t } = useI18n()
@@ -91,13 +92,20 @@ function saveDates(): void {
     </section>
 
     <template v-else>
-      <section class="flex items-baseline justify-between">
-        <p class="text-sm font-medium">
-          {{ t('itinerary.summary', { days: layout.days.length }) }}
-        </p>
-        <p v-if="estimate" class="tabular text-xs text-muted">
-          {{ t('itinerary.estimateTotal', { amount: money(estimate), currency: group.currency }) }}
-        </p>
+      <section class="flex items-center justify-between gap-3">
+        <div class="min-w-0">
+          <p class="text-sm font-medium">{{ t('itinerary.summary', { days: layout.days.length }) }}</p>
+          <p v-if="estimate" class="tabular text-xs text-muted">
+            {{ t('itinerary.estimateTotal', { amount: money(estimate), currency: group.currency }) }}
+          </p>
+        </div>
+        <button
+          class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-accent/40 bg-accent-soft px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:border-accent"
+          @click="emit('ai')"
+        >
+          <Sparkles class="size-3.5" />
+          {{ t('ai.title') }}
+        </button>
       </section>
 
       <section class="rounded-card border border-border bg-surface p-4 shadow-card">
