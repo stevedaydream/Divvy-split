@@ -60,3 +60,19 @@
 
 **處理**：`default` 改為 `divvy-app-e4565`；部署前可用 `firebase use` 確認目前專案。
 GitHub Actions 兩個 workflow 也同樣指錯，已改 `projectId` 與 secret 名稱（`FIREBASE_SERVICE_ACCOUNT_DIVVY_APP_E4565`）。
+
+---
+
+## B6. `authDomain` 改成 `web.app` 前要先加 OAuth 重新導向 URI
+
+**現象**：把 `VITE_FIREBASE_AUTH_DOMAIN` 從 `firebaseapp.com` 改成 `web.app` 後，
+Google 登入會出現 `redirect_uri_mismatch`。
+
+**原因**：Google OAuth 用戶端只接受預先登記的重新導向 URI，
+預設只登記 `https://<project>.firebaseapp.com/__/auth/handler`。
+
+**處理**：先到 Google Cloud Console → API 和服務 → 憑證 →
+Web client (auto created by Google Service)，新增
+`https://divvy-app-e4565.web.app/__/auth/handler`，再重新 build 並部署。
+改成同網域的原因是 iOS Safari 和已安裝的 PWA 會擋跨網域的第三方 Cookie。
+PWA 的 `navigateFallbackDenylist: [/^\/__\//]` 必須保留，否則 service worker 會攔截登入流程。
