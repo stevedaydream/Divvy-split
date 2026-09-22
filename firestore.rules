@@ -1,0 +1,124 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    // --- users -------------------------------------------------------------
+    // A profile is readable by any signed-in user: group members need to see
+    // each other's nickname and payment details to settle up.
+    match /users/{uid} {
+      allow read: if signedIn();
+      allow create, update: if isSelf(uid);
+      allow delete: if isSelf(uid);
+    }
+
+    // --- groups ------------------------------------------------------------
+    match /groups/{groupId} {
+
+      function memberOf(data) {
+        return signedIn() && request.auth.uid in data.memberIds;
+      }
+
+      function isMember() {
+        return memberOf(resource.data);
+      }
+
+      function isOwner() {
+        return signedIn() && request.auth.uid == resource.data.ownerId;
+      }
+
+      // Joining via an invite link. The caller must prove they hold the secret
+      // `inviteCode` by echoing it back as `joinCode`. Non-members cannot read
+      // the document, so the code cannot be discovered from the group id alone.
+      function isValidJoin() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return signedIn()
+          && !(request.auth.uid in before.memberIds)
+          && after.joinCode == before.inviteCode
+          && after.memberIds.hasAll(before.memberIds)
+          && after.memberIds.hasOnly(before.memberIds.concat([request.auth.uid]))
+          && request.auth.uid in after.memberIds
+          // Joining must not rewrite anything else about the group.
+          && after.name == before.name
+          && after.currency == before.currency
+          && after.location == before.location
+          && after.ownerId == before.ownerId
+          && after.inviteCode == before.inviteCode
+          && after.archived == before.archived;
+      }
+
+      // Leaving removes only yourself, and only if you are not the owner.
+      function isValidLeave() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return isMember()
+          && request.auth.uid != before.ownerId
+          && !(request.auth.uid in after.memberIds)
+          && before.memberIds.hasAll(after.memberIds)
+          && after.ownerId == before.ownerId
+          && after.currency == before.currency;
+      }
+
+      // A member may edit shared fields and their own denormalised profile,
+      // but never the roster, the owner, the currency or the invite code.
+      function isMemberEdit() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return isMember()
+          && after.memberIds == before.memberIds
+          && after.ownerId == before.ownerId
+          && after.currency == before.currency
+          && (after.inviteCode == before.inviteCode || isOwner());
+      }
+
+      allow read: if isMember();
+
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.memberIds == [request.auth.uid]
+        && request.resource.data.inviteCode is string
+        && request.resource.data.inviteCode.size() >= 8;
+
+      allow update: if isMemberEdit() || isValidJoin() || isValidLeave();
+
+      allow delete: if isOwner();
+    }
+
+    // --- entries -----------------------------------------------------------
+    match /entries/{entryId} {
+
+      function groupOf(groupId) {
+        return get(/databases/$(database)/documents/groups/$(groupId)).data;
+      }
+
+      function memberOfGroup(groupId) {
+        return signedIn() && request.auth.uid in groupOf(groupId).memberIds;
+      }
+
+      allow read: if memberOfGroup(resource.data.groupId);
+
+      allow create: if memberOfGroup(request.resource.data.groupId)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.payerId == request.auth.uid
+        && request.resource.data.amountMinor is int
+        && request.resource.data.groupAmountMinor is int;
+
+      // Only the person who filed an entry may change or remove it, and it
+      // can never be moved into a different group.
+      allow update: if resource.data.createdBy == request.auth.uid
+        && request.resource.data.groupId == resource.data.groupId
+        && request.resource.data.createdBy == resource.data.createdBy;
+
+      allow delete: if resource.data.createdBy == request.auth.uid;
+    }
+  }
+}
