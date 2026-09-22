@@ -129,7 +129,7 @@ export default {
     category: '分類',
     notePlaceholder: '備註（選填）',
     justMe: '只有我',
-    tabs: { ledger: '帳本', itinerary: '行程', stats: '統計' },
+    tabs: { ledger: '帳本', itinerary: '行程', stats: '統計', tools: '工具' },
   },
 
   settle: {
@@ -255,6 +255,24 @@ export default {
     outsideTitle: '有行程不在旅行日期內',
     outsideHint: '旅行日期變更後，這些項目落在範圍外。點一下改到新的日期。',
     unscheduledTitle: '已加入的行程',
+  },
+
+  tools: {
+    packing: '我的行李清單',
+    packingHint: '只有你看得到。',
+    packingPresetAction: '加入常用項目',
+    packingPreset: '護照,機票／電子登機證,手機充電器,行動電源,轉接頭,網卡／SIM 卡,現金,信用卡,旅平險資料,常備藥,盥洗用品,換洗衣物',
+    todos: '共同待辦',
+    todosHint: '群組成員都看得到，也都可以勾選。',
+    add: '新增',
+    addPlaceholder: '新增項目',
+    doneBy: '{name} 完成',
+    qr: '入境 QR Code',
+    qrHint: '例如 Visit Japan Web 的入境審查與海關申報。只存在這台裝置，沒有網路也能打開。',
+    qrSlot: { immigration: '入境審查', customs: '海關申報' },
+    qrUpload: '上傳截圖',
+    qrEnlarge: '全螢幕顯示',
+    qrSaveFailed: '無法儲存圖片，裝置空間可能不足。',
   },
 
   country: {

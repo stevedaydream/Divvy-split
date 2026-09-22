@@ -137,6 +137,16 @@ export interface Invitation {
   createdAt: Timestamp | null
 }
 
+/** A packing-list or to-do line. */
+export interface ChecklistItem {
+  id: string
+  text: string
+  done: boolean
+  /** Who last added or ticked it; shown on shared to-dos. */
+  updatedBy: string
+  createdAt: Timestamp | null
+}
+
 /** A `from -> to` transfer proposed by the settlement planner. */
 export interface Transfer {
   from: string

@@ -129,7 +129,7 @@ export default {
     category: 'Category',
     notePlaceholder: 'Note (optional)',
     justMe: 'Just me',
-    tabs: { ledger: 'Ledger', itinerary: 'Itinerary', stats: 'Stats' },
+    tabs: { ledger: 'Ledger', itinerary: 'Itinerary', stats: 'Stats', tools: 'Tools' },
   },
 
   settle: {
@@ -255,6 +255,24 @@ export default {
     outsideTitle: 'Some plans fall outside the trip',
     outsideHint: 'The trip dates changed and these items are now out of range. Tap one to move it.',
     unscheduledTitle: 'Planned so far',
+  },
+
+  tools: {
+    packing: 'My packing list',
+    packingHint: 'Only you can see this.',
+    packingPresetAction: 'Add common items',
+    packingPreset: 'Passport,Boarding pass,Phone charger,Power bank,Plug adapter,SIM / eSIM,Cash,Credit card,Travel insurance,Medicine,Toiletries,Clothes',
+    todos: 'Shared to-dos',
+    todosHint: 'Everyone in the group can see and tick these.',
+    add: 'Add',
+    addPlaceholder: 'Add an item',
+    doneBy: 'Done by {name}',
+    qr: 'Arrival QR codes',
+    qrHint: 'E.g. Visit Japan Web immigration and customs. Stored on this device only, so they open without a connection.',
+    qrSlot: { immigration: 'Immigration', customs: 'Customs' },
+    qrUpload: 'Upload screenshot',
+    qrEnlarge: 'Show full screen',
+    qrSaveFailed: 'Could not save the image — the device may be out of space.',
   },
 
   country: {

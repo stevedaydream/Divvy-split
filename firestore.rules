@@ -18,6 +18,18 @@ service cloud.firestore {
       allow read: if signedIn();
       allow create, update: if isSelf(uid);
       allow delete: if isSelf(uid);
+
+      // Personal packing list, one per trip. Only its owner can see it —
+      // unlike the profile above, nobody else needs to.
+      match /packing/{itemId} {
+        allow read, delete: if isSelf(uid);
+        allow create, update: if isSelf(uid)
+          && request.resource.data.groupId is string
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 120
+          && request.resource.data.done is bool;
+      }
     }
 
     // --- groups ------------------------------------------------------------
@@ -121,6 +133,22 @@ service cloud.firestore {
         allow create, update: if isGroupMember() && validItem(request.resource.data);
         // The owner also clears the plan when deleting the whole group.
         allow delete: if isGroupMember();
+      }
+
+      // --- shared to-dos -----------------------------------------------------
+      match /todos/{todoId} {
+        function isTodoMember() {
+          return signedIn()
+            && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
+        }
+
+        allow read, delete: if isTodoMember();
+        allow create, update: if isTodoMember()
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 120
+          && request.resource.data.done is bool
+          && request.resource.data.updatedBy == request.auth.uid;
       }
     }
 

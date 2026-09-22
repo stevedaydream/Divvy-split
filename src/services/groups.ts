@@ -150,13 +150,16 @@ export async function leaveGroup(groupId: string, uid: string): Promise<void> {
 
 /** Removes the group and every entry filed against it. Owner only. */
 export async function deleteGroup(groupId: string): Promise<void> {
-  const [entries, itinerary] = await Promise.all([
+  const [entries, itinerary, todos] = await Promise.all([
     getDocs(query(collection(db, 'entries'), where('groupId', '==', groupId))),
     getDocs(collection(db, COLLECTION, groupId, 'itinerary')),
+    getDocs(collection(db, COLLECTION, groupId, 'todos')),
   ])
 
   // A batch caps at 500 writes, so large ledgers are committed in chunks.
-  const refs = [...entries.docs, ...itinerary.docs].map((d) => d.ref)
+  // Members' personal packing lists live under their own user docs and are
+  // left alone: nobody else may touch them, and they are harmless orphans.
+  const refs = [...entries.docs, ...itinerary.docs, ...todos.docs].map((d) => d.ref)
   for (let i = 0; i < refs.length; i += 400) {
     const batch = writeBatch(db)
     refs.slice(i, i + 400).forEach((ref) => batch.delete(ref))

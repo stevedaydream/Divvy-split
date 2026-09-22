@@ -11,6 +11,7 @@ import EntryRow from '@/components/group/EntryRow.vue'
 import EntrySheet from '@/components/group/EntrySheet.vue'
 import GroupItinerary from '@/components/group/GroupItinerary.vue'
 import GroupStats from '@/components/group/GroupStats.vue'
+import GroupTools from '@/components/group/GroupTools.vue'
 import InviteSheet from '@/components/group/InviteSheet.vue'
 import ItinerarySheet from '@/components/group/ItinerarySheet.vue'
 import MemberStrip from '@/components/group/MemberStrip.vue'
@@ -50,8 +51,8 @@ onMounted(() => {
   void rates.load()
 })
 
-type GroupTab = 'itinerary' | 'ledger' | 'stats'
-const TABS: GroupTab[] = ['itinerary', 'ledger', 'stats']
+type GroupTab = 'itinerary' | 'ledger' | 'stats' | 'tools'
+const TABS: GroupTab[] = ['itinerary', 'ledger', 'stats', 'tools']
 const tab = ref<GroupTab>('ledger')
 
 // Pick the opening tab from the trip phase once, when the group first loads;
@@ -278,6 +279,8 @@ function copyInvite(): void {
         :locale="locale"
       />
 
+      <GroupTools v-else-if="tab === 'tools'" :group="group" :uid="auth.uid ?? ''" />
+
       <GroupItinerary
         v-else-if="tab === 'itinerary'"
         :group="group"
@@ -367,6 +370,7 @@ function copyInvite(): void {
       </template>
 
       <button
+        v-if="tab !== 'tools'"
         class="fixed bottom-6 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
         :aria-label="tab === 'itinerary' ? $t('itinerary.addSpot') : $t('group.addExpense')"
         @click="onFab"

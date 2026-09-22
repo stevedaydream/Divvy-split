@@ -49,7 +49,7 @@ view 不得直接 import `firebase/firestore`。
 | `/join?g=&c=` | JoinView | 邀請連結入口，驗證 inviteCode 後加入群組 |
 | `/onboarding` | OnboardingView | 暱稱、主要幣別、收款資訊 |
 | `/groups` | GroupsView | 群組列表（底部導航第 1 格） |
-| `/groups/:id` | GroupDetailView | 分頁：行程／帳本（依日期分段）／統計，預設分頁依旅行階段（`defaultTab`）；一人群組隱藏結算與成員列 |
+| `/groups/:id` | GroupDetailView | 分頁：行程／帳本（依日期分段）／統計／工具，預設分頁依旅行階段（`defaultTab`）；一人群組隱藏結算與成員列 |
 | `/calculator` | CalculatorView | 匯率換算計算機（第 2 格）；定位鈕把基準換成所在地幣別，主要幣別固定排第一 |
 | `/profile` | ProfileView | 個人檔案、語言、外觀、登出（第 3 格） |
 
@@ -94,6 +94,10 @@ view 不得直接 import `firebase/firestore`。
   邀請存在 `invitations/{groupId}_{toUid}`，帶著 inviteCode；接受時走原本的 joinGroup，
   所以重設邀請碼也會讓未接受的邀請失效。收到的邀請顯示在群組列表最上方。
   `contacts.ts` 是未來朋友系統的接口（`source: 'friend'`），個人檔案頁已放「好友（即將推出）」。
+
+- **旅行工具**（工具分頁）：行李清單是個人的（`users/{uid}/packing`，以 `groupId` 篩選，只有本人可讀）；
+  共同待辦是全群組的（`groups/{id}/todos`）。入境 QR（如 Visit Japan Web）只存在裝置 localStorage
+  （`lib/entryQr.ts`，縮至 900px PNG），因為是個人證件、且機場常沒網路。刪除群組不會刪到成員的個人行李清單。
 
 詳見 `src/types/models.ts`。
 
