@@ -309,6 +309,23 @@ export default {
     quotaNoFallback: '你的 Gemini API 額度已用盡，備援目前也無法使用。預計在 {time} 後可再使用。',
   },
 
+  importList: {
+    action: 'AI 整理',
+    title: '用 AI 整理清單',
+    hint: '貼上旅行社的行前說明或朋友傳的清單，也可以上傳截圖。要帶的東西會放進你的行李清單，要辦的事放進共同待辦。',
+    placeholder: '貼上清單內容（選填）',
+    addImage: '加入截圖',
+    imageHint: '最多 {max} 張，只會送給 Gemini 辨識，不會存到 Divvy。',
+    run: '整理清單',
+    reviewHint: '勾選要加入的項目；點右邊的標籤可以在「行李」和「待辦」之間切換。已經在清單裡的項目會自動略過。',
+    toPacking: '行李',
+    toTodo: '待辦',
+    switchList: '切換行李或待辦',
+    apply: '加入 {count} 項',
+    added: '已加入行李 {packing} 項、待辦 {todos} 項。',
+    empty: '沒有找到新的項目，可能都已經在清單裡了。',
+  },
+
   country: {
     search: '搜尋國家',
     none_found: '找不到符合的國家。',

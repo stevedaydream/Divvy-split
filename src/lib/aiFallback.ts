@@ -1,5 +1,5 @@
 import { app } from '@/lib/firebase'
-import { GEMINI_MODEL } from '@/lib/gemini'
+import { GEMINI_MODEL, type AiImage } from '@/lib/gemini'
 
 /**
  * Divvy's own Gemini access through Firebase AI Logic, used only as a
@@ -37,14 +37,17 @@ async function loadModel() {
 }
 
 /** Runs one prompt on Divvy's quota. Throws if unconfigured or it fails too. */
-export async function askFallback(prompt: string): Promise<string> {
+export async function askFallback(prompt: string, images: AiImage[] = []): Promise<string> {
   if (!isFallbackConfigured()) throw new Error('fallback-unconfigured')
   modelPromise ??= loadModel().catch((cause) => {
     modelPromise = null
     throw cause
   })
   const model = await modelPromise
-  const result = await model.generateContent(prompt)
+  const result = await model.generateContent([
+    prompt,
+    ...images.map((image) => ({ inlineData: { mimeType: image.mimeType, data: image.data } })),
+  ])
   const text = result.response.text()
   if (!text) throw new Error('fallback-empty')
   return text

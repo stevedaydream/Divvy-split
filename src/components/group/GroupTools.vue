@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { onScopeDispose, ref, watch } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ImagePlus, QrCode, Trash2, X } from 'lucide-vue-next'
 import ChecklistCard from '@/components/group/ChecklistCard.vue'
+import ChecklistImportSheet from '@/components/group/ChecklistImportSheet.vue'
 import {
   addChecklistItem, addChecklistItems, deleteChecklistItem, setChecklistDone, watchChecklist,
   type ChecklistKind,
@@ -13,7 +14,7 @@ import type { ChecklistItem, Group } from '@/types/models'
 
 const props = defineProps<{ group: Group; uid: string }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const toast = useToast()
 
 // --- checklists --------------------------------------------------------------
@@ -55,6 +56,10 @@ function addPackingPreset(): void {
   void run(() => addChecklistItems('packing', props.group.id, props.uid, texts))
 }
 
+// AI import of a list someone else prepared; skips lines already present.
+const importOpen = ref(false)
+const existingLines = computed(() => [...packing.value, ...todos.value].map((item) => item.text))
+
 const nameOf = (uid: string) => props.group.members[uid]?.nickname ?? t('common.unknown')
 
 // --- arrival QR codes (this device only) ---------------------------------------
@@ -94,10 +99,21 @@ function clearQr(slot: QrSlot): void {
       :hint="t('tools.packingHint')"
       :items="packing"
       :preset-label="t('tools.packingPresetAction')"
+      :action-label="t('importList.action')"
       @add="add('packing', $event)"
       @toggle="toggle('packing', $event)"
       @remove="remove('packing', $event)"
       @preset="addPackingPreset"
+      @action="importOpen = true"
+    />
+
+    <ChecklistImportSheet
+      :open="importOpen"
+      :group="group"
+      :uid="uid"
+      :locale="locale"
+      :existing="existingLines"
+      @close="importOpen = false"
     />
 
     <ChecklistCard

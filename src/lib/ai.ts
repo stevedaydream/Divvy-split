@@ -149,3 +149,59 @@ function parseJson(reply: string): unknown {
     return null
   }
 }
+
+// --- checklist import -----------------------------------------------------------
+
+export type ChecklistTarget = 'packing' | 'todo'
+
+export interface ChecklistSuggestion {
+  text: string
+  list: ChecklistTarget
+}
+
+/**
+ * Turns a travel agency's or friend's list — pasted text and/or screenshots —
+ * into short checklist lines, split into things to pack and things to do.
+ */
+export function checklistPrompt(trip: TripContext, text: string, imageCount: number): string {
+  return `Turn this pre-trip checklist into short checklist lines.
+${tripLines(trip)}
+${imageCount ? `The list is in the ${imageCount} attached image(s).` : ''}
+${text.trim() ? `Pasted text:\n"""\n${text.slice(0, 8000)}\n"""` : ''}
+
+Rules:
+- "packing" = something to bring (passport, adapter, sunscreen).
+- "todo" = something to do before or during the trip (exchange money, fill in Visit Japan Web, book a table).
+- One item per line, at most 40 characters, no numbering, keep quantities ("T-shirt x3").
+- Merge duplicates. Skip headings, greetings, prices and anything that is not an item.
+Reply with JSON only: {"items":[{"text":"...","list":"packing|todo"}]}`
+}
+
+/** Case- and space-insensitive key, so "Passport" and " passport " match. */
+function normalize(text: string): string {
+  return text.toLowerCase().replace(/\s+/g, '')
+}
+
+/**
+ * Validates the model's lines and drops anything already on either list,
+ * so importing the same list twice adds nothing.
+ */
+export function parseChecklist(reply: string, existing: Iterable<string>): ChecklistSuggestion[] {
+  const data = parseJson(reply) as { items?: unknown } | null
+  if (!data || !Array.isArray(data.items)) return []
+  const seen = new Set([...existing].map(normalize))
+  const result: ChecklistSuggestion[] = []
+
+  for (const raw of data.items) {
+    if (!raw || typeof raw !== 'object') continue
+    const r = raw as Record<string, unknown>
+    const line = text(r.text, 120).replace(/^[-*•\d.)\s]+/, '').trim()
+    if (!line) continue
+    const key = normalize(line)
+    if (seen.has(key)) continue
+    seen.add(key)
+    result.push({ text: line, list: r.list === 'todo' ? 'todo' : 'packing' })
+  }
+
+  return result.slice(0, 100)
+}

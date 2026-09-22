@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { adjustPrompt, parseAdjustment, parseItems, planPrompt, toDraft } from '../ai'
+import { adjustPrompt, checklistPrompt, parseAdjustment, parseChecklist, parseItems, planPrompt, toDraft } from '../ai'
 
 const trip = { currency: 'JPY', startDate: '2026-10-02', endDate: '2026-10-05' }
 
@@ -94,5 +94,44 @@ describe('prompts', () => {
       'cheaper',
     )
     expect(prompt).toContain('"estimate":1500')
+  })
+})
+
+describe('parseChecklist', () => {
+  it('splits into packing and to-dos, defaulting to packing', () => {
+    const reply = JSON.stringify({
+      items: [
+        { text: '護照', list: 'packing' },
+        { text: '換日幣', list: 'todo' },
+        { text: '防曬乳', list: 'whatever' },
+      ],
+    })
+    expect(parseChecklist(reply, [])).toEqual([
+      { text: '護照', list: 'packing' },
+      { text: '換日幣', list: 'todo' },
+      { text: '防曬乳', list: 'packing' },
+    ])
+  })
+
+  it('drops lines already on a list and duplicates in the reply', () => {
+    const reply = JSON.stringify({
+      items: [{ text: 'Passport' }, { text: ' pass port ' }, { text: 'Adapter' }, { text: 'adapter' }],
+    })
+    expect(parseChecklist(reply, ['passport']).map((s) => s.text)).toEqual(['Adapter'])
+  })
+
+  it('strips list markers and skips empties', () => {
+    const reply = JSON.stringify({ items: [{ text: '1. 充電器' }, { text: '- 雨傘' }, { text: '  ' }, 'x', null] })
+    expect(parseChecklist(reply, []).map((s) => s.text)).toEqual(['充電器', '雨傘'])
+  })
+
+  it('is empty for garbage', () => {
+    expect(parseChecklist('nope', [])).toEqual([])
+  })
+
+  it('mentions attached images in the prompt', () => {
+    const trip = { destination: '日本', startDate: '', endDate: '', currency: 'JPY', language: '繁體中文' }
+    expect(checklistPrompt(trip, '', 2)).toContain('2 attached image')
+    expect(checklistPrompt(trip, '護照', 0)).toContain('護照')
   })
 })

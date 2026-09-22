@@ -309,6 +309,23 @@ export default {
     quotaNoFallback: 'Your Gemini API quota is used up and the backup is unavailable. Try again after {time}.',
   },
 
+  importList: {
+    action: 'AI import',
+    title: 'Import a list with AI',
+    hint: 'Paste a travel agency\'s briefing or a friend\'s list, or add screenshots. Things to bring go to your packing list; things to do go to shared to-dos.',
+    placeholder: 'Paste the list (optional)',
+    addImage: 'Add screenshot',
+    imageHint: 'Up to {max}. Sent to Gemini to read, never stored in Divvy.',
+    run: 'Tidy up the list',
+    reviewHint: 'Tick what to add; tap the tag to switch between packing and to-do. Lines already on a list are skipped.',
+    toPacking: 'Pack',
+    toTodo: 'To-do',
+    switchList: 'Switch between packing and to-do',
+    apply: 'Add {count}',
+    added: 'Added {packing} to packing and {todos} to to-dos.',
+    empty: 'No new items found — they may already be on your lists.',
+  },
+
   country: {
     search: 'Search country',
     none_found: 'No countries match that search.',

@@ -87,6 +87,12 @@ export function quotaResetAt(body: unknown, now: number): number {
 
 export type GeminiError = 'invalid-key' | 'quota' | 'blocked' | 'failed'
 
+/** An image sent along with a prompt, base64 without the data-URL prefix. */
+export interface AiImage {
+  mimeType: string
+  data: string
+}
+
 export class GeminiRequestError extends Error {
   constructor(
     readonly reason: GeminiError,
@@ -98,7 +104,12 @@ export class GeminiRequestError extends Error {
 }
 
 /** Sends one prompt and returns the model's text, which should be JSON. */
-export async function askGemini(apiKey: string, prompt: string, signal?: AbortSignal): Promise<string> {
+export async function askGemini(
+  apiKey: string,
+  prompt: string,
+  signal?: AbortSignal,
+  images: AiImage[] = [],
+): Promise<string> {
   let response: Response
   try {
     response = await fetch(
@@ -108,7 +119,12 @@ export async function askGemini(apiKey: string, prompt: string, signal?: AbortSi
         // The key goes in a header, not the URL, so it stays out of logs.
         headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          contents: [
+            {
+              role: 'user',
+              parts: [{ text: prompt }, ...images.map((image) => ({ inline_data: { mime_type: image.mimeType, data: image.data } }))],
+            },
+          ],
           generationConfig: { responseMimeType: 'application/json', temperature: 0.6 },
         }),
         signal,

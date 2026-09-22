@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, onScopeDispose, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Clock, ExternalLink, KeyRound, LifeBuoy, Sparkles } from 'lucide-vue-next'
+import { Sparkles } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
+import AiKeySetup from '@/components/ai/AiKeySetup.vue'
+import AiStatus from '@/components/ai/AiStatus.vue'
 import AppSheet from '@/components/ui/AppSheet.vue'
 import { categoryEmoji } from '@/data/categories'
 import { placeLabel } from '@/data/countries'
@@ -11,12 +13,10 @@ import {
   adjustPrompt, parseAdjustment, parseItems, parsePrompt, planPrompt, type AiStyle, type TripContext,
 } from '@/lib/ai'
 import { formatDay } from '@/lib/dates'
-import { askFallback, isFallbackConfigured } from '@/lib/aiFallback'
-import {
-  askGemini, GeminiRequestError, readGeminiKey, readQuotaUntil, withQuotaFallback, writeGeminiKey, writeQuotaUntil,
-} from '@/lib/gemini'
+import { GeminiRequestError } from '@/lib/gemini'
 import { formatNumber } from '@/lib/money'
 import { createItem, deleteItem, type ItineraryDraft } from '@/services/itinerary'
+import { useAiAsk } from '@/composables/useAiAsk'
 import { useToast } from '@/composables/useToast'
 import type { Group, ItineraryItem } from '@/types/models'
 
@@ -38,8 +38,7 @@ const MODES: Mode[] = ['plan', 'adjust', 'parse']
 const STYLES: AiStyle[] = ['packed', 'balanced', 'relaxed']
 const THEMES = ['food', 'nature', 'culture', 'shopping', 'family', 'nightlife'] as const
 
-const apiKey = ref(readGeminiKey())
-const keyDraft = ref('')
+const { apiKey, usedFallback, blocked, refresh, saveKey, forgetKey, resetTime, ask } = useAiAsk(() => props.locale)
 const mode = ref<Mode>('plan')
 const style = ref<AiStyle>('balanced')
 const themes = ref<string[]>([])
@@ -48,31 +47,6 @@ const instruction = ref('')
 const booking = ref('')
 const loading = ref(false)
 const error = ref('')
-
-/**
- * Quota handling (D18): when the user's key runs out mid-request, Divvy's
- * fallback finishes that one request, then the guide stays off until the
- * user's quota resets — the fallback never becomes the default.
- */
-const quotaUntil = ref(readQuotaUntil())
-const usedFallback = ref(false)
-const now = ref(Date.now())
-const blocked = computed(() => quotaUntil.value > now.value)
-
-// Re-enable the guide by itself once the reset time passes.
-const ticker = setInterval(() => {
-  now.value = Date.now()
-  if (quotaUntil.value && quotaUntil.value <= now.value) quotaUntil.value = 0
-}, 15_000)
-onScopeDispose(() => clearInterval(ticker))
-
-/** "14:05" today, otherwise "9/23 15:00", in the viewer's time zone. */
-function resetTime(ms: number): string {
-  const date = new Date(ms)
-  const sameDay = date.toDateString() === new Date().toDateString()
-  const time = date.toLocaleTimeString(props.locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
-  return sameDay ? time : `${date.getMonth() + 1}/${date.getDate()} ${time}`
-}
 
 interface Suggestion { draft: ItineraryDraft; selected: boolean }
 interface Removal { item: ItineraryItem; selected: boolean }
@@ -98,9 +72,7 @@ watch(
   () => props.open,
   (open) => {
     if (open) {
-      apiKey.value = readGeminiKey()
-      quotaUntil.value = readQuotaUntil()
-      now.value = Date.now()
+      refresh()
       resetResult()
     } else {
       controller?.abort()
@@ -108,19 +80,6 @@ watch(
   },
 )
 watch(mode, resetResult)
-
-function saveKey(): void {
-  writeGeminiKey(keyDraft.value)
-  apiKey.value = readGeminiKey()
-  quotaUntil.value = readQuotaUntil()
-  keyDraft.value = ''
-}
-
-function forgetKey(): void {
-  writeGeminiKey('')
-  apiKey.value = ''
-  quotaUntil.value = 0
-}
 
 function toggleTheme(theme: string): void {
   themes.value = themes.value.includes(theme) ? themes.value.filter((x) => x !== theme) : [...themes.value, theme]
@@ -139,29 +98,6 @@ const canRun = computed(() => {
   if (mode.value === 'parse') return booking.value.trim().length > 0
   return true
 })
-
-/** Asks the user's key; on a quota error, lets the fallback finish this one request. */
-async function ask(prompt: string, signal: AbortSignal): Promise<string> {
-  const block = (until: number) => {
-    writeQuotaUntil(until)
-    quotaUntil.value = until
-    now.value = Date.now()
-  }
-  try {
-    const outcome = await withQuotaFallback(
-      () => askGemini(apiKey.value, prompt, signal),
-      isFallbackConfigured() ? () => askFallback(prompt) : null,
-    )
-    if (outcome.usedFallback) {
-      block(outcome.resetAt)
-      usedFallback.value = true
-    }
-    return outcome.reply
-  } catch (cause) {
-    if (cause instanceof GeminiRequestError && cause.reason === 'quota') block(cause.resetAt)
-    throw cause
-  }
-}
 
 async function run(): Promise<void> {
   if (!apiKey.value || !canRun.value || blocked.value) return
@@ -194,7 +130,7 @@ async function run(): Promise<void> {
     const reason = cause instanceof GeminiRequestError ? cause.reason : 'failed'
     error.value =
       reason === 'quota'
-        ? t('ai.quotaNoFallback', { time: resetTime(quotaUntil.value) })
+        ? t('ai.quotaNoFallback', { time: resetTime() })
         : t(`ai.error.${reason}`)
   } finally {
     loading.value = false
@@ -224,24 +160,7 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
 
 <template>
   <AppSheet :open="open" :title="t('ai.title')" @close="emit('close')">
-    <!-- No key yet: explain and collect it, stored on this device only. -->
-    <section v-if="!apiKey" class="space-y-3">
-      <div class="flex items-center gap-2">
-        <KeyRound class="size-4 text-accent" />
-        <h3 class="text-sm font-semibold">{{ t('ai.keyTitle') }}</h3>
-      </div>
-      <p class="text-xs leading-relaxed text-muted">{{ t('ai.keyHint') }}</p>
-      <a
-        href="https://aistudio.google.com/apikey"
-        target="_blank"
-        rel="noopener"
-        class="inline-flex items-center gap-1 text-xs font-medium text-accent"
-      >
-        {{ t('ai.getKey') }} <ExternalLink class="size-3" />
-      </a>
-      <AppInput v-model="keyDraft" type="password" autocomplete="off" :placeholder="t('ai.keyPlaceholder')" />
-      <AppButton block :disabled="!keyDraft.trim()" @click="saveKey">{{ t('common.save') }}</AppButton>
-    </section>
+    <AiKeySetup v-if="!apiKey" @save="saveKey" />
 
     <template v-else>
       <div class="mb-5 grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1">
@@ -305,13 +224,7 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
         <p class="text-[11px] text-faint">{{ t('ai.parseHint') }}</p>
       </section>
 
-      <p
-        v-if="blocked && !usedFallback && !error"
-        class="mt-5 flex items-start gap-2 rounded-xl bg-surface-2 p-3 text-xs leading-relaxed text-muted"
-      >
-        <Clock class="mt-0.5 size-3.5 shrink-0" />
-        {{ t('ai.quotaBlocked', { time: resetTime(quotaUntil) }) }}
-      </p>
+      <AiStatus v-if="blocked && !usedFallback && !error" kind="blocked" :time="resetTime()" class="mt-5" />
 
       <div class="mt-5">
         <AppButton block :loading="loading" :disabled="!canRun || blocked" @click="run">
@@ -323,14 +236,7 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
       <p v-if="error" class="mt-3 text-center text-xs text-negative">{{ error }}</p>
 
       <section v-if="hasResult" class="mt-6 space-y-2">
-        <p
-          v-if="usedFallback"
-          class="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs leading-relaxed"
-          role="status"
-        >
-          <LifeBuoy class="mt-0.5 size-3.5 shrink-0 text-amber-500" />
-          {{ t('ai.fallbackUsed', { time: resetTime(quotaUntil) }) }}
-        </p>
+        <AiStatus v-if="usedFallback" kind="fallback" :time="resetTime()" />
         <p v-if="summary" class="text-sm">{{ summary }}</p>
         <p class="text-xs text-muted">{{ t('ai.reviewHint') }}</p>
 

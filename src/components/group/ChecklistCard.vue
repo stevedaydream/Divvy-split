@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Check, Plus, X } from 'lucide-vue-next'
+import { Check, Plus, Sparkles, X } from 'lucide-vue-next'
 import type { ChecklistItem } from '@/types/models'
 
 const props = defineProps<{
@@ -12,6 +12,8 @@ const props = defineProps<{
   nameOf?: (uid: string) => string
   /** Offer a one-tap starter list while the checklist is empty. */
   presetLabel?: string
+  /** Optional AI action in the header, e.g. importing someone else's list. */
+  actionLabel?: string
 }>()
 
 const emit = defineEmits<{
@@ -19,6 +21,7 @@ const emit = defineEmits<{
   toggle: [item: ChecklistItem]
   remove: [item: ChecklistItem]
   preset: []
+  action: []
 }>()
 
 const { t } = useI18n()
@@ -37,7 +40,16 @@ function submit(): void {
   <section class="rounded-card border border-border bg-surface p-4 shadow-card">
     <header class="flex items-baseline justify-between">
       <h2 class="text-sm font-semibold">{{ title }}</h2>
-      <span v-if="items.length" class="tabular text-xs text-muted">{{ done }} / {{ items.length }}</span>
+      <span class="flex items-center gap-3">
+        <span v-if="items.length" class="tabular text-xs text-muted">{{ done }} / {{ items.length }}</span>
+        <button
+          v-if="actionLabel"
+          class="inline-flex items-center gap-1 text-xs font-medium text-accent"
+          @click="emit('action')"
+        >
+          <Sparkles class="size-3.5" /> {{ actionLabel }}
+        </button>
+      </span>
     </header>
     <p class="mt-0.5 text-[11px] text-faint">{{ hint }}</p>
 

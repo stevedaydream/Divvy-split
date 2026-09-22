@@ -27,16 +27,17 @@ src/
 ├── services/     users · groups · entries · itinerary · invitations · checklists   ← 唯一碰 Firestore 的一層
 │                 contacts（可邀請的人；未來朋友系統的接口）
 ├── stores/       auth · groups · rates
-├── composables/  useGroupDetail · useInvite · useToast · useConfirm · useTheme
+├── composables/  useGroupDetail · useInvite · useAiAsk（Key／額度／備援）· useToast · useConfirm · useTheme
 ├── components/
 │   ├── ui/       AppButton · AppSheet · AppDialog · AppInput · AppField
 │   │             AppAvatar · AppSkeleton · AppEmptyState · ToastHost
 │   ├── layout/   AppShell · TopBar · BottomNav
+│   ├── ai/       AiKeySetup · AiStatus（兩個 AI 畫面共用）
 │   ├── charts/   ChartCanvas（Chart.js，lazy load）
 │   ├── currency/ CurrencyPicker · CountryPicker · AmountInput
 │   └── group/    GroupCard · EntryRow · MemberStrip · EntrySheet · SettlementSheet
 │                 GroupItinerary · ItinerarySheet · GroupStats · GroupTools · ChecklistCard
-│                 InviteSheet · InvitationList · AiGuideSheet
+│                 InviteSheet · InvitationList · AiGuideSheet · ChecklistImportSheet
 ├── views/        Login · Join · Onboarding · Groups · GroupDetail · Calculator · Profile
 ├── i18n/         index.ts · en.ts · zh-TW.ts
 ├── router/       index.ts
@@ -103,6 +104,8 @@ view 不得直接 import `firebase/firestore`。
 - **旅行工具**（工具分頁）：行李清單是個人的（`users/{uid}/packing`，以 `groupId` 篩選，只有本人可讀）；
   共同待辦是全群組的（`groups/{id}/todos`）。入境 QR（如 Visit Japan Web）只存在裝置 localStorage
   （`lib/entryQr.ts`，縮至 900px PNG），因為是個人證件、且機場常沒網路。刪除群組不會刪到成員的個人行李清單。
+  行李清單的「AI 整理」可貼上旅行社／朋友的清單文字或截圖（`lib/images.ts` 縮成 1600px JPEG），
+  AI 分成行李與待辦、略過已存在的項目，預覽勾選後才加入。
 
 - **AI 導遊**（行程分頁）：產生行程／調整行程／解析訂位三種模式，使用者自己的 Gemini Key
   （只存在裝置，見 D16）。回應經 `lib/ai.ts` 驗證，預覽勾選後才寫入行程。
