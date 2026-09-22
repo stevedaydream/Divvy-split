@@ -73,6 +73,18 @@ export default {
   invite: {
     action: 'Invite',
     companion: 'Invite a travel companion',
+    linkHint: 'Post it in a chat; anyone who taps it can join.',
+    recent: 'Recent companions',
+    recentHint: 'People you have shared a group with. They will see the invitation next time they open Divvy.',
+    noRecent: 'You have not split expenses with anyone yet.',
+    sharedGroup: 'Together in {name}',
+    send: 'Invite',
+    again: 'Invite again',
+    pending: 'Invited',
+    sent: 'Invited {name}. They will see it when they open the app.',
+    received: '{from} invited you to join {name}',
+    accept: 'Join',
+    decline: 'Decline',
     copy: 'Share invite link',
     shareText: 'Join "{name}" to split expenses:',
     copied: 'Invite link copied.',
@@ -156,6 +168,9 @@ export default {
     signOutTitle: 'Sign out?',
     signOutMessage: 'You will need to sign in again to see your groups.',
     updated: 'Profile updated.',
+    friends: 'Friends',
+    comingSoon: 'Coming soon',
+    friendsHint: 'For now, invite people you have split with from a group\'s Invite sheet.',
   },
 
   currency: {

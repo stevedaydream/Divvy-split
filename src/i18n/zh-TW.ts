@@ -73,6 +73,18 @@ export default {
   invite: {
     action: '邀請成員',
     companion: '邀請同行者',
+    linkHint: '傳到 LINE 群組，點連結就能加入。',
+    recent: '最近同行者',
+    recentHint: '曾和你在同一個群組的人。對方下次打開 Divvy 就會看到邀請。',
+    noRecent: '還沒有和其他人一起分過帳。',
+    sharedGroup: '一起在「{name}」',
+    send: '邀請',
+    again: '再邀請一次',
+    pending: '已邀請',
+    sent: '已邀請 {name}。對方打開 app 就會看到。',
+    received: '{from} 邀請你加入「{name}」',
+    accept: '加入',
+    decline: '拒絕',
     copy: '分享邀請連結',
     shareText: '加入「{name}」一起分帳：',
     copied: '邀請連結已複製。',
@@ -156,6 +168,9 @@ export default {
     signOutTitle: '要登出嗎？',
     signOutMessage: '再次查看群組時需要重新登入。',
     updated: '個人檔案已更新。',
+    friends: '好友',
+    comingSoon: '即將推出',
+    friendsHint: '目前可在群組的「邀請成員」中，直接邀請曾一起分帳的人。',
   },
 
   currency: {

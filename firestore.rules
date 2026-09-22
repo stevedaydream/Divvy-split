@@ -124,6 +124,43 @@ service cloud.firestore {
       }
     }
 
+    // --- invitations -------------------------------------------------------
+    // Sent by a group member to someone they have shared a group with.
+    // The id is `{groupId}_{toUid}`, so each person has at most one per group.
+    match /invitations/{invitationId} {
+      function groupDoc(groupId) {
+        return get(/databases/$(database)/documents/groups/$(groupId)).data;
+      }
+
+      function validSend() {
+        let data = request.resource.data;
+        let group = groupDoc(data.groupId);
+        return signedIn()
+          && data.fromUid == request.auth.uid
+          && data.toUid is string && data.toUid != request.auth.uid
+          && invitationId == data.groupId + '_' + data.toUid
+          && request.auth.uid in group.memberIds
+          && !(data.toUid in group.memberIds)
+          && data.inviteCode == group.inviteCode
+          && data.status == 'pending';
+      }
+
+      allow read: if signedIn()
+        && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
+
+      allow create: if validSend();
+
+      // Re-sending replaces the invitation; the recipient may only decline.
+      allow update: if validSend()
+        || (signedIn()
+          && resource.data.toUid == request.auth.uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+          && request.resource.data.status == 'declined');
+
+      allow delete: if signedIn()
+        && (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
+    }
+
     // --- entries -----------------------------------------------------------
     match /entries/{entryId} {
 

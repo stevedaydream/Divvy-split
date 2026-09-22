@@ -11,12 +11,12 @@ import EntryRow from '@/components/group/EntryRow.vue'
 import EntrySheet from '@/components/group/EntrySheet.vue'
 import GroupItinerary from '@/components/group/GroupItinerary.vue'
 import GroupStats from '@/components/group/GroupStats.vue'
+import InviteSheet from '@/components/group/InviteSheet.vue'
 import ItinerarySheet from '@/components/group/ItinerarySheet.vue'
 import MemberStrip from '@/components/group/MemberStrip.vue'
 import SettlementSheet from '@/components/group/SettlementSheet.vue'
 import { useGroupDetail } from '@/composables/useGroupDetail'
 import { useConfirm } from '@/composables/useConfirm'
-import { useInvite } from '@/composables/useInvite'
 import { useToast } from '@/composables/useToast'
 import { createEntry, deleteEntry, updateEntry, type EntryDraft } from '@/services/entries'
 import { updateGroup } from '@/services/groups'
@@ -35,7 +35,6 @@ const { t, locale } = useI18n()
 const auth = useAuthStore()
 const rates = useRatesStore()
 const toast = useToast()
-const { invite } = useInvite()
 const { confirm } = useConfirm()
 
 const { group, entries, itinerary, balances, settlements, total, loading } = useGroupDetail(toRef(props, 'id'))
@@ -228,8 +227,10 @@ async function remove(entry: Entry): Promise<void> {
   }
 }
 
+/** Share the link, or invite someone you have travelled with before. */
+const inviteSheetOpen = ref(false)
 function copyInvite(): void {
-  if (group.value) void invite(group.value)
+  inviteSheetOpen.value = true
 }
 </script>
 
@@ -395,6 +396,8 @@ function copyInvite(): void {
         @close="settleSheetOpen = false"
         @record="recordTransfer"
       />
+
+      <InviteSheet :open="inviteSheetOpen" :group="group" @close="inviteSheetOpen = false" />
 
       <ItinerarySheet
         :open="itemSheetOpen"

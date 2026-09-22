@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Eye, EyeOff, LogOut, Pencil } from 'lucide-vue-next'
+import { Eye, EyeOff, LogOut, Pencil, UsersRound } from 'lucide-vue-next'
 import AppShell from '@/components/layout/AppShell.vue'
 import TopBar from '@/components/layout/TopBar.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -112,6 +112,19 @@ async function signOut(): Promise<void> {
             <component :is="revealed ? EyeOff : Eye" class="size-4" />
           </button>
         </div>
+      </section>
+
+      <!-- Placeholder for the friend system (D14). Inviting currently works
+           through recent companions on each group's invite sheet. -->
+      <section class="rounded-card border border-dashed border-border px-5 py-4">
+        <div class="flex items-center gap-2">
+          <UsersRound class="size-4 text-muted" />
+          <h3 class="text-sm font-medium">{{ t('profile.friends') }}</h3>
+          <span class="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-muted">
+            {{ t('profile.comingSoon') }}
+          </span>
+        </div>
+        <p class="mt-1.5 text-xs leading-relaxed text-muted">{{ t('profile.friendsHint') }}</p>
       </section>
 
       <section class="overflow-hidden rounded-card border border-border bg-surface shadow-card">

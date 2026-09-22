@@ -12,6 +12,7 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppSheet from '@/components/ui/AppSheet.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 import GroupCard from '@/components/group/GroupCard.vue'
+import InvitationList from '@/components/group/InvitationList.vue'
 import CountryPicker from '@/components/currency/CountryPicker.vue'
 import CurrencyPicker from '@/components/currency/CurrencyPicker.vue'
 import { countryName } from '@/data/countries'
@@ -238,6 +239,7 @@ async function leave(): Promise<void> {
     <TopBar :title="t('groups.title')" />
 
     <div class="px-5 py-5">
+      <InvitationList />
       <AppSkeleton v-if="store.loading" :rows="3" />
 
       <AppEmptyState

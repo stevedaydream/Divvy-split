@@ -58,7 +58,7 @@ view 不得直接 import `firebase/firestore`。
 
 ## 4. 資料模型
 
-三個 collection：`users` / `groups` / `entries`，加上子集合 `groups/{id}/itinerary`。
+四個 collection：`users` / `groups` / `entries` / `invitations`，加上子集合 `groups/{id}/itinerary`。
 
 - **金額一律為「最小單位整數」**（`amountMinor`），不使用浮點數累加。
   小數位數由 `data/currencies.ts` 決定（JPY/KRW 為 0，KWD 為 3）。
@@ -88,6 +88,12 @@ view 不得直接 import `firebase/firestore`。
   `estimateMinor` 是群組幣別的預估花費，統計分頁以天對照實際（僅「全體」）。
   排版邏輯在 `lib/itinerary.ts`（`layoutDays` 會把旅行日期外的項目另外列出）。
   刪除群組時一併刪除行程；規則允許群組擁有者刪除他人帳目，否則刪群組會失敗。
+
+- **邀請**：群組頁「邀請成員」開啟 InviteSheet：分享連結，或邀請「最近同行者」
+  （`services/contacts.ts` 的 `listContacts`，由已可讀的群組成員算出，不額外查詢）。
+  邀請存在 `invitations/{groupId}_{toUid}`，帶著 inviteCode；接受時走原本的 joinGroup，
+  所以重設邀請碼也會讓未接受的邀請失效。收到的邀請顯示在群組列表最上方。
+  `contacts.ts` 是未來朋友系統的接口（`source: 'friend'`），個人檔案頁已放「好友（即將推出）」。
 
 詳見 `src/types/models.ts`。
 

@@ -120,6 +120,23 @@ export interface ItineraryItem {
   updatedAt: Timestamp | null
 }
 
+/**
+ * An invitation to join a group, sent to someone you have shared a group
+ * with. Stored at `invitations/{groupId}_{toUid}`; accepting reuses the
+ * invite-code join, so a rotated code also voids pending invitations.
+ */
+export interface Invitation {
+  id: string
+  groupId: string
+  groupName: string
+  fromUid: string
+  fromName: string
+  toUid: string
+  inviteCode: string
+  status: 'pending' | 'declined'
+  createdAt: Timestamp | null
+}
+
 /** A `from -> to` transfer proposed by the settlement planner. */
 export interface Transfer {
   from: string
