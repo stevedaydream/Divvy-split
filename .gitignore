@@ -24,3 +24,6 @@ dist-ssr
 *.sw?
 .env
 *.env
+
+# Firebase CLI local deploy cache
+.firebase/
