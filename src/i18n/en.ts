@@ -69,7 +69,9 @@ export default {
   },
 
   invite: {
-    copy: 'Copy invite link',
+    action: 'Invite',
+    copy: 'Share invite link',
+    shareText: 'Join "{name}" to split expenses:',
     copied: 'Invite link copied.',
     copyFailed: 'Could not copy. Link: {url}',
     rotate: 'Reset invite link',
@@ -121,6 +123,7 @@ export default {
     yourDetails: 'Your payment details',
     addYourDetails: 'Add your details',
     recipientDetails: 'Their payment details',
+    actionPending: 'Settle up · {count}',
   },
 
   profile: {

@@ -69,7 +69,9 @@ export default {
   },
 
   invite: {
-    copy: '複製邀請連結',
+    action: '邀請成員',
+    copy: '分享邀請連結',
+    shareText: '加入「{name}」一起分帳：',
     copied: '邀請連結已複製。',
     copyFailed: '複製失敗，連結：{url}',
     rotate: '重設邀請連結',
@@ -121,6 +123,7 @@ export default {
     yourDetails: '你的收款資訊',
     addYourDetails: '填寫收款資訊',
     recipientDetails: '對方的收款資訊',
+    actionPending: '結算・{count} 筆',
   },
 
   profile: {

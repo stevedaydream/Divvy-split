@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, toRef } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { Link2, Plus, Receipt, Scale } from 'lucide-vue-next'
+import { HandCoins, Plus, Receipt, UserPlus } from 'lucide-vue-next'
+import AppButton from '@/components/ui/AppButton.vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import TopBar from '@/components/layout/TopBar.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
@@ -12,6 +13,7 @@ import MemberStrip from '@/components/group/MemberStrip.vue'
 import SettlementSheet from '@/components/group/SettlementSheet.vue'
 import { useGroupDetail } from '@/composables/useGroupDetail'
 import { useConfirm } from '@/composables/useConfirm'
+import { useInvite } from '@/composables/useInvite'
 import { useToast } from '@/composables/useToast'
 import { createEntry, deleteEntry, updateEntry, type EntryDraft } from '@/services/entries'
 import { placeLabel } from '@/data/countries'
@@ -26,6 +28,7 @@ const { t, locale } = useI18n()
 const auth = useAuthStore()
 const rates = useRatesStore()
 const toast = useToast()
+const { invite } = useInvite()
 const { confirm } = useConfirm()
 
 const { group, entries, balances, settlements, total, loading } = useGroupDetail(toRef(props, 'id'))
@@ -97,17 +100,8 @@ async function remove(entry: Entry): Promise<void> {
   }
 }
 
-async function copyInvite(): Promise<void> {
-  const current = group.value
-  if (!current) return
-
-  const url = `${window.location.origin}/join?g=${current.id}&c=${current.inviteCode}`
-  try {
-    await navigator.clipboard.writeText(url)
-    toast.success(t('invite.copied'))
-  } catch {
-    toast.info(t('invite.copyFailed', { url }))
-  }
+function copyInvite(): void {
+  if (group.value) void invite(group.value)
 }
 </script>
 
@@ -117,24 +111,7 @@ async function copyInvite(): Promise<void> {
       :title="group?.name"
       :subtitle="(group && placeLabel(group.location, group.destination, locale)) || undefined"
       back
-    >
-      <template #actions>
-        <button
-          class="grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
-          :aria-label="$t('invite.copy')"
-          @click="copyInvite"
-        >
-          <Link2 class="size-4" />
-        </button>
-        <button
-          class="grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
-          :aria-label="$t('settle.title')"
-          @click="settleSheetOpen = true"
-        >
-          <Scale class="size-4" />
-        </button>
-      </template>
-    </TopBar>
+    />
 
     <div v-if="loading" class="px-5 py-6">
       <AppSkeleton :rows="1" height="h-24" />
@@ -148,6 +125,24 @@ async function copyInvite(): Promise<void> {
           {{ formatNumber(total, group.currency, locale) }}
           <span class="text-base font-normal text-muted">{{ group.currency }}</span>
         </p>
+      </section>
+
+      <!-- Labelled actions instead of bare top-bar icons, which people missed.
+           A group of one has nothing to split yet, so inviting is the primary step. -->
+      <section class="grid grid-cols-2 gap-3 px-5 pb-6">
+        <AppButton
+          :variant="group.memberIds.length === 1 ? 'primary' : 'secondary'"
+          @click="copyInvite"
+        >
+          <template #icon><UserPlus class="size-4" /></template>
+          {{ $t('invite.action') }}
+        </AppButton>
+        <AppButton variant="secondary" @click="settleSheetOpen = true">
+          <template #icon><HandCoins class="size-4" /></template>
+          {{ settlements.length
+            ? $t('settle.actionPending', { count: settlements.length })
+            : $t('settle.title') }}
+        </AppButton>
       </section>
 
       <section class="px-5 pb-6">

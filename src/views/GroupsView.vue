@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { ChevronDown, Link2, MapPin, Plus, RotateCw, Trash2, Users } from 'lucide-vue-next'
+import { ChevronDown, MapPin, Plus, RotateCw, Share2, Trash2, Users } from 'lucide-vue-next'
 import AppShell from '@/components/layout/AppShell.vue'
 import TopBar from '@/components/layout/TopBar.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -21,6 +21,7 @@ import { createGroup, deleteGroup, leaveGroup, rotateInviteCode, updateGroup } f
 import { useAuthStore } from '@/stores/auth'
 import { useGroupsStore } from '@/stores/groups'
 import { useConfirm } from '@/composables/useConfirm'
+import { useInvite } from '@/composables/useInvite'
 import { useToast } from '@/composables/useToast'
 import type { CurrencyCode } from '@/types/currency'
 import type { Group } from '@/types/models'
@@ -30,6 +31,7 @@ const auth = useAuthStore()
 const store = useGroupsStore()
 const router = useRouter()
 const toast = useToast()
+const { invite } = useInvite()
 const { confirm } = useConfirm()
 
 watch(
@@ -147,17 +149,10 @@ async function save(): Promise<void> {
   }
 }
 
-async function copyInvite(): Promise<void> {
+function copyInvite(): void {
   const group = selected.value
   if (!group) return
-
-  const url = `${window.location.origin}/join?g=${group.id}&c=${group.inviteCode}`
-  try {
-    await navigator.clipboard.writeText(url)
-    toast.success(t('invite.copied'))
-  } catch {
-    toast.info(t('invite.copyFailed', { url }))
-  }
+  void invite(group)
   optionsOpen.value = false
 }
 
@@ -331,7 +326,7 @@ async function leave(): Promise<void> {
           class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
           @click="copyInvite"
         >
-          <Link2 class="size-4 text-muted" />
+          <Share2 class="size-4 text-muted" />
           {{ t('invite.copy') }}
         </button>
 
