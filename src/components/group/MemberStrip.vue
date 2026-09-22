@@ -25,7 +25,9 @@ function balanceOf(uid: string): number {
 </script>
 
 <template>
-  <div class="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pb-1">
+  <!-- pt-1 leaves room for the active avatar's ring + offset, which
+       overflow-x-auto would otherwise clip at the top. -->
+  <div class="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pt-1 pb-1">
     <button
       class="flex w-16 shrink-0 flex-col items-center gap-1.5"
       @click="emit('select', 'all')"
