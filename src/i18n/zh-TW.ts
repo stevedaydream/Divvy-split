@@ -304,6 +304,9 @@ export default {
     getKey: '到 Google AI Studio 取得免費 Key',
     keyPlaceholder: '貼上 API Key',
     forgetKey: '從這台裝置移除 API Key',
+    fallbackUsed: '你的 Gemini API 額度已用盡，這次改由 Divvy 備援完成。你的額度預計在 {time} 後恢復，在那之前 AI 導遊會暫停。',
+    quotaBlocked: '你的 Gemini API 額度已用盡，預計在 {time} 後恢復。',
+    quotaNoFallback: '你的 Gemini API 額度已用盡，備援目前也無法使用。預計在 {time} 後可再使用。',
   },
 
   country: {

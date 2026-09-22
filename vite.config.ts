@@ -46,6 +46,9 @@ export default defineConfig({
           // Chart.js is dynamically imported by the stats tab; leaving it
           // unassigned keeps it in its own lazy chunk instead of the eager vendor one.
           if (id.includes('/chart.js/') || id.includes('@kurkle')) return
+          // Same for the AI fallback (Firebase AI Logic + App Check).
+          // Both the `firebase/ai` entry and the `@firebase/ai` package it wraps.
+          if (/node_modules\/@?firebase\/(ai|app-check)\//.test(id)) return
           if (id.includes('firebase') || id.includes('@firebase')) return 'firebase'
           if (id.includes('/vue/') || id.includes('pinia') || id.includes('vue-router') || id.includes('vue-i18n')) {
             return 'vue-libs'

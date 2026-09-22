@@ -193,3 +193,20 @@ JPY／KRW 這類無小數幣別會顯示成 `12000.00`。
 存在本機才能離線打開，也避免上傳敏感資料。
 
 **代價**：QR 換裝置要重新上傳；刪除群組不會刪到成員各自的行李清單（其他人無權刪除）。
+
+---
+
+## D18. Firebase AI Logic 只當「額度用盡」的一次性備援
+
+**決定**：使用者自己的 Gemini Key 回 429 時，以 Firebase AI Logic（Divvy 專案的 Gemini 免費額度）
+重送**同一個請求**，完成後在結果上方提醒額度已用盡與恢復時間；在恢復前 AI 導遊停用，
+不再動用備援。其他錯誤（Key 無效、被拒）不走備援。
+
+**恢復時間**：解析 429 回應的 google.rpc 細節——每日額度（quotaId 含 `PerDay`）在
+太平洋時間午夜重置；其餘依 `retryDelay`（無則 60 秒）。存在裝置 localStorage，換 Key 時清除。
+
+**原因**：讓被中斷的操作不白費，同時避免備援變成常態、耗光專案的共用免費額度。
+
+**前提**：Firebase AI Logic 強制 App Check，需設定 reCAPTCHA Enterprise site key
+（`VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`）。未設定時備援自動停用，只顯示恢復時間。
+`firebase/ai` 與 `firebase/app-check` 只在需要備援時載入（vite manualChunks 刻意排除）。

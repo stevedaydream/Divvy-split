@@ -22,7 +22,7 @@
 src/
 ├── types/        models.ts（UserProfile / Group / Entry / ItineraryItem / Invitation / ChecklistItem）· currency.ts
 ├── lib/          firebase · money · settlement · stats · itinerary · dates · calc · geo · line
-│                 ai（提示詞＋回應驗證）· gemini（API 呼叫＋裝置端 Key）· entryQr · random
+│                 ai（提示詞＋回應驗證）· gemini（API 呼叫＋裝置端 Key＋額度重置時間）· aiFallback · entryQr · random
 ├── data/         currencies · countries · categories
 ├── services/     users · groups · entries · itinerary · invitations · checklists   ← 唯一碰 Firestore 的一層
 │                 contacts（可邀請的人；未來朋友系統的接口）
@@ -106,6 +106,7 @@ view 不得直接 import `firebase/firestore`。
 
 - **AI 導遊**（行程分頁）：產生行程／調整行程／解析訂位三種模式，使用者自己的 Gemini Key
   （只存在裝置，見 D16）。回應經 `lib/ai.ts` 驗證，預覽勾選後才寫入行程。
+  自己的 Key 額度用盡時，由 Firebase AI Logic 備援完成當次請求並提醒恢復時間，之後停用到恢復為止（D18，`lib/aiFallback.ts`）。
 
 詳見 `src/types/models.ts`。
 

@@ -304,6 +304,9 @@ export default {
     getKey: 'Get a free key from Google AI Studio',
     keyPlaceholder: 'Paste API key',
     forgetKey: 'Remove the API key from this device',
+    fallbackUsed: 'Your Gemini API quota ran out, so Divvy\'s backup finished this request. Your quota should be back at {time}; the guide pauses until then.',
+    quotaBlocked: 'Your Gemini API quota is used up. It should be back at {time}.',
+    quotaNoFallback: 'Your Gemini API quota is used up and the backup is unavailable. Try again after {time}.',
   },
 
   country: {

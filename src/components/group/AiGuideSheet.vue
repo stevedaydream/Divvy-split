@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { ExternalLink, KeyRound, Sparkles } from 'lucide-vue-next'
+import { Clock, ExternalLink, KeyRound, LifeBuoy, Sparkles } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppInput from '@/components/ui/AppInput.vue'
 import AppSheet from '@/components/ui/AppSheet.vue'
@@ -11,7 +11,10 @@ import {
   adjustPrompt, parseAdjustment, parseItems, parsePrompt, planPrompt, type AiStyle, type TripContext,
 } from '@/lib/ai'
 import { formatDay } from '@/lib/dates'
-import { askGemini, GeminiRequestError, readGeminiKey, writeGeminiKey } from '@/lib/gemini'
+import { askFallback, isFallbackConfigured } from '@/lib/aiFallback'
+import {
+  askGemini, GeminiRequestError, readGeminiKey, readQuotaUntil, withQuotaFallback, writeGeminiKey, writeQuotaUntil,
+} from '@/lib/gemini'
 import { formatNumber } from '@/lib/money'
 import { createItem, deleteItem, type ItineraryDraft } from '@/services/itinerary'
 import { useToast } from '@/composables/useToast'
@@ -46,6 +49,31 @@ const booking = ref('')
 const loading = ref(false)
 const error = ref('')
 
+/**
+ * Quota handling (D18): when the user's key runs out mid-request, Divvy's
+ * fallback finishes that one request, then the guide stays off until the
+ * user's quota resets — the fallback never becomes the default.
+ */
+const quotaUntil = ref(readQuotaUntil())
+const usedFallback = ref(false)
+const now = ref(Date.now())
+const blocked = computed(() => quotaUntil.value > now.value)
+
+// Re-enable the guide by itself once the reset time passes.
+const ticker = setInterval(() => {
+  now.value = Date.now()
+  if (quotaUntil.value && quotaUntil.value <= now.value) quotaUntil.value = 0
+}, 15_000)
+onScopeDispose(() => clearInterval(ticker))
+
+/** "14:05" today, otherwise "9/23 15:00", in the viewer's time zone. */
+function resetTime(ms: number): string {
+  const date = new Date(ms)
+  const sameDay = date.toDateString() === new Date().toDateString()
+  const time = date.toLocaleTimeString(props.locale, { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' })
+  return sameDay ? time : `${date.getMonth() + 1}/${date.getDate()} ${time}`
+}
+
 interface Suggestion { draft: ItineraryDraft; selected: boolean }
 interface Removal { item: ItineraryItem; selected: boolean }
 const additions = ref<Suggestion[]>([])
@@ -63,6 +91,7 @@ function resetResult(): void {
   removals.value = []
   summary.value = ''
   error.value = ''
+  usedFallback.value = false
 }
 
 watch(
@@ -70,6 +99,8 @@ watch(
   (open) => {
     if (open) {
       apiKey.value = readGeminiKey()
+      quotaUntil.value = readQuotaUntil()
+      now.value = Date.now()
       resetResult()
     } else {
       controller?.abort()
@@ -81,7 +112,14 @@ watch(mode, resetResult)
 function saveKey(): void {
   writeGeminiKey(keyDraft.value)
   apiKey.value = readGeminiKey()
+  quotaUntil.value = readQuotaUntil()
   keyDraft.value = ''
+}
+
+function forgetKey(): void {
+  writeGeminiKey('')
+  apiKey.value = ''
+  quotaUntil.value = 0
 }
 
 function toggleTheme(theme: string): void {
@@ -102,8 +140,31 @@ const canRun = computed(() => {
   return true
 })
 
+/** Asks the user's key; on a quota error, lets the fallback finish this one request. */
+async function ask(prompt: string, signal: AbortSignal): Promise<string> {
+  const block = (until: number) => {
+    writeQuotaUntil(until)
+    quotaUntil.value = until
+    now.value = Date.now()
+  }
+  try {
+    const outcome = await withQuotaFallback(
+      () => askGemini(apiKey.value, prompt, signal),
+      isFallbackConfigured() ? () => askFallback(prompt) : null,
+    )
+    if (outcome.usedFallback) {
+      block(outcome.resetAt)
+      usedFallback.value = true
+    }
+    return outcome.reply
+  } catch (cause) {
+    if (cause instanceof GeminiRequestError && cause.reason === 'quota') block(cause.resetAt)
+    throw cause
+  }
+}
+
 async function run(): Promise<void> {
-  if (!apiKey.value || !canRun.value) return
+  if (!apiKey.value || !canRun.value || blocked.value) return
   resetResult()
   loading.value = true
   controller?.abort()
@@ -116,7 +177,7 @@ async function run(): Promise<void> {
         : mode.value === 'adjust'
           ? adjustPrompt(trip.value, props.items, instruction.value)
           : parsePrompt(trip.value, booking.value)
-    const reply = await askGemini(apiKey.value, prompt, controller.signal)
+    const reply = await ask(prompt, controller.signal)
 
     if (mode.value === 'adjust') {
       const result = parseAdjustment(reply, trip.value, props.items.map((i) => i.id))
@@ -131,7 +192,10 @@ async function run(): Promise<void> {
   } catch (cause) {
     if ((cause as Error).name === 'AbortError') return
     const reason = cause instanceof GeminiRequestError ? cause.reason : 'failed'
-    error.value = t(`ai.error.${reason}`)
+    error.value =
+      reason === 'quota'
+        ? t('ai.quotaNoFallback', { time: resetTime(quotaUntil.value) })
+        : t(`ai.error.${reason}`)
   } finally {
     loading.value = false
   }
@@ -241,8 +305,16 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
         <p class="text-[11px] text-faint">{{ t('ai.parseHint') }}</p>
       </section>
 
+      <p
+        v-if="blocked && !usedFallback && !error"
+        class="mt-5 flex items-start gap-2 rounded-xl bg-surface-2 p-3 text-xs leading-relaxed text-muted"
+      >
+        <Clock class="mt-0.5 size-3.5 shrink-0" />
+        {{ t('ai.quotaBlocked', { time: resetTime(quotaUntil) }) }}
+      </p>
+
       <div class="mt-5">
-        <AppButton block :loading="loading" :disabled="!canRun" @click="run">
+        <AppButton block :loading="loading" :disabled="!canRun || blocked" @click="run">
           <template #icon><Sparkles class="size-4" /></template>
           {{ t(`ai.run.${mode}`) }}
         </AppButton>
@@ -251,6 +323,14 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
       <p v-if="error" class="mt-3 text-center text-xs text-negative">{{ error }}</p>
 
       <section v-if="hasResult" class="mt-6 space-y-2">
+        <p
+          v-if="usedFallback"
+          class="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs leading-relaxed"
+          role="status"
+        >
+          <LifeBuoy class="mt-0.5 size-3.5 shrink-0 text-amber-500" />
+          {{ t('ai.fallbackUsed', { time: resetTime(quotaUntil) }) }}
+        </p>
         <p v-if="summary" class="text-sm">{{ summary }}</p>
         <p class="text-xs text-muted">{{ t('ai.reviewHint') }}</p>
 
@@ -287,7 +367,7 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
         </label>
       </section>
 
-      <button class="mt-6 block w-full text-center text-[11px] text-faint hover:text-negative" @click="writeGeminiKey(''); apiKey = ''">
+      <button class="mt-6 block w-full text-center text-[11px] text-faint hover:text-negative" @click="forgetKey">
         {{ t('ai.forgetKey') }}
       </button>
     </template>
