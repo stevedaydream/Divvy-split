@@ -76,3 +76,21 @@ Web client (auto created by Google Service)，新增
 `https://divvy-app-e4565.web.app/__/auth/handler`，再重新 build 並部署。
 改成同網域的原因是 iOS Safari 和已安裝的 PWA 會擋跨網域的第三方 Cookie。
 PWA 的 `navigateFallbackDenylist: [/^\/__\//]` 必須保留，否則 service worker 會攔截登入流程。
+
+---
+
+## B7. 已安裝的 PWA 用彈出視窗登入會出現「missing initial state」
+
+**現象**：從主畫面打開 Divvy（PWA）按 Google 登入，畫面變成白底錯誤頁：
+`Unable to process request due to missing initial state ... signInWithRedirect in a storage-partitioned browser environment.`
+
+**原因**：`signInWithPopup` 在 standalone PWA 裡會把彈出視窗開在另一個瀏覽器環境
+（Android 的 Custom Tab），`/__/auth/handler` 讀不到原本頁面的 sessionStorage，無法把結果交回。
+
+**處理**：`stores/auth.ts` 在 `isStandalone()`（`lib/browserEnv.ts`）時改用 `signInWithRedirect`，
+一般瀏覽器仍用彈出視窗，被擋（`auth/popup-blocked`）時也改用 redirect。
+`authDomain` 與網站同網域（B6）是 redirect 能穩定運作的前提。
+跳轉回來會落在 `/?next=...`，router 的 login 分支會導向 `next`（只接受站內路徑）。
+
+另外 LINE／Facebook／Instagram 等 app 內建瀏覽器，Google 本來就禁止登入：登入頁會偵測並提示改用
+外部瀏覽器；LINE 可在網址加 `openExternalBrowser=1` 直接跳到預設瀏覽器。

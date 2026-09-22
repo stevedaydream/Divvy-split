@@ -14,6 +14,12 @@ export default {
     signIn: 'Continue with Google',
     secure: 'Stored on Google Firebase, visible only to you and your groups.',
     failed: 'Sign-in failed. Please try again.',
+    inAppTitle: 'Open in Chrome or Safari',
+    inAppHint: 'Google does not allow signing in from an app\'s built-in browser. Copy the link and open it in Chrome or Safari.',
+    inAppHintLine: 'Google does not allow signing in from LINE\'s built-in browser. Open this page in your phone\'s browser instead.',
+    openExternal: 'Open in browser',
+    copyLink: 'Copy link',
+    linkCopied: 'Link copied — paste it into your browser.',
   },
 
   onboarding: {

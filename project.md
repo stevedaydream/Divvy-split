@@ -51,7 +51,7 @@ view 不得直接 import `firebase/firestore`。
 
 | 路徑 | 畫面 | 說明 |
 |---|---|---|
-| `/` | LoginView | Google 登入，`?next=` 保留原本要去的頁 |
+| `/` | LoginView | Google 登入，`?next=` 保留原本要去的頁；PWA 用 redirect、瀏覽器用 popup（B7）；偵測 app 內建瀏覽器並提示改用外部瀏覽器 |
 | `/join?g=&c=` | JoinView | 邀請連結入口，驗證 inviteCode 後加入群組 |
 | `/privacy` | PrivacyView | 隱私權政策（`meta.open`：未登入、未建檔也能看）；內容須與程式和 firestore.rules 一致 |
 | `/onboarding` | OnboardingView | 暱稱、主要幣別、收款資訊 |

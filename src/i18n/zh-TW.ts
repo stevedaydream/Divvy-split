@@ -14,6 +14,12 @@ export default {
     signIn: '使用 Google 繼續',
     secure: '資料存放在 Google Firebase，只有你和群組成員看得到。',
     failed: '登入失敗，請再試一次。',
+    inAppTitle: '請用 Chrome 或 Safari 開啟',
+    inAppHint: 'Google 不允許在 app 內建的瀏覽器登入。請複製連結，貼到 Chrome 或 Safari 開啟。',
+    inAppHintLine: 'Google 不允許在 LINE 內建的瀏覽器登入，請改用手機的瀏覽器開啟。',
+    openExternal: '用瀏覽器開啟',
+    copyLink: '複製連結',
+    linkCopied: '已複製連結，請貼到瀏覽器開啟。',
   },
 
   onboarding: {

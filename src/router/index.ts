@@ -38,7 +38,12 @@ router.beforeEach(async (to) => {
     return { name: 'onboarding', query: { next: to.fullPath } }
   }
 
-  if (to.name === 'login') return { name: 'groups' }
+  if (to.name === 'login') {
+    // Back from a redirect sign-in: continue to where the user was headed.
+    // Only same-site paths, so ?next= cannot bounce anyone to another site.
+    const next = to.query.next
+    return typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') ? next : { name: 'groups' }
+  }
 
   return true
 })

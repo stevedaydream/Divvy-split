@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
+import { externalBrowserUrl, inAppBrowser } from '@/lib/browserEnv'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 
@@ -15,15 +16,37 @@ const toast = useToast()
 
 const signingIn = ref(false)
 
+// Google blocks sign-in inside apps' built-in browsers (LINE, Facebook, ...).
+const embedded = inAppBrowser(navigator.userAgent)
+const escapeUrl = computed(() => externalBrowserUrl(location.href, embedded))
+
+async function copyLink(): Promise<void> {
+  try {
+    await navigator.clipboard.writeText(location.href)
+    toast.success(t('login.linkCopied'))
+  } catch {
+    toast.info(location.href, 10000)
+  }
+}
+
+onMounted(() => {
+  // A redirect sign-in that failed comes back here with the reason.
+  if (auth.redirectError && auth.redirectError !== 'auth/redirect-cancelled-by-user') {
+    toast.error(t('login.failed'))
+  }
+  auth.redirectError = null
+})
+
 async function signIn(): Promise<void> {
   signingIn.value = true
   try {
-    await auth.signIn()
+    // A redirect leaves the page; keep the spinner until it does.
+    if ((await auth.signIn()) === 'redirecting') return
     const next = typeof route.query.next === 'string' ? route.query.next : '/groups'
     await router.replace(auth.hasProfile ? next : { name: 'onboarding', query: { next } })
+    signingIn.value = false
   } catch {
     toast.error(t('login.failed'))
-  } finally {
     signingIn.value = false
   }
 }
@@ -38,6 +61,29 @@ async function signIn(): Promise<void> {
 
       <h1 class="mt-7 text-2xl font-semibold tracking-tight">Divvy</h1>
       <p class="mt-2 text-sm leading-relaxed text-muted">{{ t('login.tagline') }}</p>
+
+      <section
+        v-if="embedded"
+        class="mt-7 rounded-card border border-amber-500/40 bg-amber-500/10 p-4 text-left text-xs leading-relaxed"
+        role="alert"
+      >
+        <p class="font-medium">{{ t('login.inAppTitle') }}</p>
+        <p class="mt-1 text-muted">{{ escapeUrl ? t('login.inAppHintLine') : t('login.inAppHint') }}</p>
+        <a
+          v-if="escapeUrl"
+          :href="escapeUrl"
+          class="mt-3 flex h-10 items-center justify-center rounded-xl bg-accent text-sm font-medium text-accent-fg"
+        >
+          {{ t('login.openExternal') }}
+        </a>
+        <button
+          v-else
+          class="mt-3 flex h-10 w-full items-center justify-center rounded-xl border border-border bg-surface text-sm font-medium"
+          @click="copyLink"
+        >
+          {{ t('login.copyLink') }}
+        </button>
+      </section>
 
       <AppButton class="mt-9" block size="lg" :loading="signingIn" @click="signIn">
         <template #icon>
