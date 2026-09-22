@@ -12,6 +12,7 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
     "firebase": "^12.7.0",
     "lucide-vue-next": "^0.562.0",
     "pinia": "^3.0.4",

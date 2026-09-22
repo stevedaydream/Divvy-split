@@ -3,12 +3,15 @@ import {
   serverTimestamp, updateDoc, where,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import type { Entry, EntryType, SettlementMethod } from '@/types/models'
+import { isCategory } from '@/data/categories'
+import { isIsoDate, toIsoDate, todayIso } from '@/lib/dates'
+import type { Entry, EntryCategory, EntryType, SettlementMethod } from '@/types/models'
 import type { CurrencyCode } from '@/types/currency'
 
 const COLLECTION = 'entries'
 
 function toEntry(id: string, data: Record<string, unknown>): Entry {
+  const createdAt = (data.createdAt as Entry['createdAt']) ?? null
   return {
     id,
     groupId: (data.groupId as string) ?? '',
@@ -21,12 +24,26 @@ function toEntry(id: string, data: Record<string, unknown>): Entry {
     rate: (data.rate as number) ?? 1,
     groupAmountMinor: (data.groupAmountMinor as number) ?? 0,
     method: (data.method as SettlementMethod) ?? null,
-    createdAt: (data.createdAt as Entry['createdAt']) ?? null,
+    // Entries written before categories and spend dates existed fall back to
+    // "other" and the day they were recorded.
+    category: isCategory(data.category) ? data.category : 'other',
+    note: (data.note as string) ?? '',
+    date: isIsoDate(data.date) ? data.date : createdAt ? toIsoDate(createdAt.toDate()) : todayIso(),
+    createdAt,
     createdBy: (data.createdBy as string) ?? '',
   }
 }
 
-/** Live ledger for one group, newest first. Returns an unsubscribe fn. */
+/** Spend date first, then most recently recorded — the ledger's display order. */
+export function compareEntries(a: Entry, b: Entry): number {
+  if (a.date !== b.date) return a.date < b.date ? 1 : -1
+  // A pending write has no server timestamp yet; it is the newest by definition.
+  const at = a.createdAt?.toMillis() ?? Number.POSITIVE_INFINITY
+  const bt = b.createdAt?.toMillis() ?? Number.POSITIVE_INFINITY
+  return bt - at
+}
+
+/** Live ledger for one group, in `compareEntries` order. Returns an unsubscribe fn. */
 export function watchEntries(
   groupId: string,
   onChange: (entries: Entry[]) => void,
@@ -39,7 +56,7 @@ export function watchEntries(
   )
   return onSnapshot(
     q,
-    (snap) => onChange(snap.docs.map((d) => toEntry(d.id, d.data()))),
+    (snap) => onChange(snap.docs.map((d) => toEntry(d.id, d.data())).sort(compareEntries)),
     (error) => onError?.(error),
   )
 }
@@ -56,6 +73,9 @@ export interface EntryDraft {
   rate: number
   groupAmountMinor: number
   method: SettlementMethod | null
+  category: EntryCategory
+  note: string
+  date: string
 }
 
 export async function createEntry(draft: EntryDraft, uid: string): Promise<string> {

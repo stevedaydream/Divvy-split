@@ -54,6 +54,9 @@ export type EntryType = 'expense' | 'settlement'
 /** How a settlement was paid, when the app helped make the payment. */
 export type SettlementMethod = 'linepay'
 
+/** Fixed spending categories; see `data/categories.ts`. */
+export type EntryCategory = 'food' | 'transport' | 'lodging' | 'shopping' | 'fun' | 'other'
+
 /**
  * One line in a group's ledger.
  *
@@ -78,6 +81,11 @@ export interface Entry {
   /** `amountMinor` converted into the group currency's minor unit. */
   groupAmountMinor: number
   method: SettlementMethod | null
+  category: EntryCategory
+  /** Free text, only offered for the `other` category. */
+  note: string
+  /** Day the money was spent, `YYYY-MM-DD`. Not the same as `createdAt`. */
+  date: string
   createdAt: Timestamp | null
   createdBy: string
 }

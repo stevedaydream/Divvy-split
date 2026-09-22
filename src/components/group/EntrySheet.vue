@@ -6,13 +6,15 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppSheet from '@/components/ui/AppSheet.vue'
 import AmountInput from '@/components/currency/AmountInput.vue'
 import CurrencyPicker from '@/components/currency/CurrencyPicker.vue'
+import { CATEGORIES, guessCategory } from '@/data/categories'
+import { addDays, todayIso } from '@/lib/dates'
 import { lineProfileUrl } from '@/lib/line'
 import { convertMinor, formatNumber, toMajor, toMinor } from '@/lib/money'
 import { useRatesStore } from '@/stores/rates'
 import { useToast } from '@/composables/useToast'
 import type { EntryDraft } from '@/services/entries'
 import type { CurrencyCode } from '@/types/currency'
-import type { Entry, EntryType, Group, SettlementMethod } from '@/types/models'
+import type { Entry, EntryCategory, EntryType, Group, SettlementMethod } from '@/types/models'
 
 /** LINE Pay Money only moves New Taiwan Dollars. */
 const LINE_PAY_CURRENCY: CurrencyCode = 'TWD'
@@ -40,8 +42,26 @@ const amount = ref('')
 const currency = ref<CurrencyCode>(props.group.currency)
 const participants = ref<string[]>([])
 const recipient = ref<string | null>(null)
+const category = ref<EntryCategory>('other')
+const note = ref('')
+const date = ref(todayIso())
 const pickerOpen = ref(false)
 const error = ref('')
+
+/** Once the user picks a category, typing the title stops re-guessing it. */
+const categoryTouched = ref(false)
+
+watch(title, (next) => {
+  if (!categoryTouched.value) category.value = guessCategory(next) ?? 'other'
+})
+
+function pickCategory(code: EntryCategory): void {
+  category.value = code
+  categoryTouched.value = true
+}
+
+const today = computed(() => todayIso())
+const yesterday = computed(() => addDays(today.value, -1))
 
 /**
  * Editing reuses the entry's stored rate, so re-saving an old entry without
@@ -163,6 +183,10 @@ watch(
     const entry = props.entry
     if (entry) {
       tab.value = entry.type
+      categoryTouched.value = true
+      category.value = entry.category
+      note.value = entry.note
+      date.value = entry.date
       title.value = entry.title
       amount.value = String(toMajor(entry.amountMinor, entry.currency))
       currency.value = entry.currency
@@ -175,6 +199,10 @@ watch(
     originalRate.value = null
     currency.value = props.group.currency
     title.value = ''
+    categoryTouched.value = false
+    category.value = 'other'
+    note.value = ''
+    date.value = todayIso()
 
     const preset = props.presetSettlement
     if (preset) {
@@ -202,6 +230,8 @@ function toggleAll(): void {
     participants.value.length === props.group.memberIds.length ? [] : [...props.group.memberIds]
 }
 
+const justMe = computed(() => participants.value.length === 1 && participants.value[0] === props.uid)
+
 function submit(): void {
   const amountMinor = toMinor(amount.value, currency.value)
   if (amountMinor <= 0) {
@@ -218,8 +248,13 @@ function submit(): void {
     error.value = t('group.splitNobody')
     return
   }
+  if (!date.value) {
+    error.value = t('group.dateRequired')
+    return
+  }
 
   error.value = ''
+  const entryCategory: EntryCategory = isSettlement ? 'other' : category.value
 
   emit('save', {
     groupId: props.group.id,
@@ -232,6 +267,9 @@ function submit(): void {
     rate: effectiveRate.value,
     groupAmountMinor: convertedMinor.value,
     method: isSettlement ? method.value : null,
+    category: entryCategory,
+    note: !isSettlement && entryCategory === 'other' ? note.value.trim().slice(0, 200) : '',
+    date: date.value,
   })
 }
 </script>
@@ -267,15 +305,73 @@ function submit(): void {
       }) }}
     </p>
 
-    <div v-if="tab === 'expense'" class="mt-7 space-y-6">
+    <section class="mt-6 flex items-center gap-2">
+      <label for="entry-date" class="text-xs font-medium text-muted">{{ t('group.date') }}</label>
+      <input
+        id="entry-date"
+        v-model="date"
+        type="date"
+        required
+        class="tabular h-9 min-w-0 flex-1 rounded-lg border border-border bg-surface px-2.5 text-sm focus:border-accent focus:outline-none"
+      />
+      <button
+        v-for="option in [{ value: today, label: t('group.today') }, { value: yesterday, label: t('group.yesterday') }]"
+        :key="option.value"
+        type="button"
+        class="h-9 shrink-0 rounded-lg border px-2.5 text-xs font-medium transition-colors"
+        :class="date === option.value ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'"
+        @click="date = option.value"
+      >
+        {{ option.label }}
+      </button>
+    </section>
+
+    <div v-if="tab === 'expense'" class="mt-6 space-y-6">
       <AppInput v-model="title" :placeholder="t('group.whatPlaceholder')" />
 
       <section>
+        <h3 class="mb-2 text-xs font-medium text-muted">{{ t('group.category') }}</h3>
+        <div class="grid grid-cols-3 gap-2">
+          <button
+            v-for="item in CATEGORIES"
+            :key="item.code"
+            type="button"
+            class="flex h-10 items-center justify-center gap-1.5 rounded-lg border text-sm transition-colors"
+            :class="
+              category === item.code
+                ? 'border-accent bg-accent-soft font-medium text-accent'
+                : 'border-border text-muted'
+            "
+            :aria-pressed="category === item.code"
+            @click="pickCategory(item.code)"
+          >
+            <span aria-hidden="true">{{ item.emoji }}</span>
+            {{ t(`category.${item.code}`) }}
+          </button>
+        </div>
+        <AppInput
+          v-if="category === 'other'"
+          v-model="note"
+          class="mt-2"
+          :placeholder="t('group.notePlaceholder')"
+        />
+      </section>
+
+      <section v-if="group.memberIds.length > 1">
         <div class="mb-2 flex items-center justify-between">
           <h3 class="text-xs font-medium text-muted">{{ t('group.splitWith') }}</h3>
-          <button class="text-xs font-medium text-accent" @click="toggleAll">
-            {{ t('group.splitAll') }}
-          </button>
+          <div class="flex gap-3">
+            <button
+              class="text-xs font-medium"
+              :class="justMe ? 'text-fg' : 'text-accent'"
+              @click="participants = [uid]"
+            >
+              {{ t('group.justMe') }}
+            </button>
+            <button class="text-xs font-medium text-accent" @click="toggleAll">
+              {{ t('group.splitAll') }}
+            </button>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-2">

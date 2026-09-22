@@ -104,19 +104,31 @@ service cloud.firestore {
         return signedIn() && request.auth.uid in groupOf(groupId).memberIds;
       }
 
+      // Category and spend date are checked when present; entries written
+      // before they existed have neither.
+      function validDetails(data) {
+        return (!('category' in data)
+            || data.category in ['food', 'transport', 'lodging', 'shopping', 'fun', 'other'])
+          && (!('date' in data)
+            || (data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+          && (!('note' in data) || (data.note is string && data.note.size() <= 200));
+      }
+
       allow read: if memberOfGroup(resource.data.groupId);
 
       allow create: if memberOfGroup(request.resource.data.groupId)
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.payerId == request.auth.uid
         && request.resource.data.amountMinor is int
-        && request.resource.data.groupAmountMinor is int;
+        && request.resource.data.groupAmountMinor is int
+        && validDetails(request.resource.data);
 
       // Only the person who filed an entry may change or remove it, and it
       // can never be moved into a different group.
       allow update: if resource.data.createdBy == request.auth.uid
         && request.resource.data.groupId == resource.data.groupId
-        && request.resource.data.createdBy == resource.data.createdBy;
+        && request.resource.data.createdBy == resource.data.createdBy
+        && validDetails(request.resource.data);
 
       allow delete: if resource.data.createdBy == request.auth.uid;
     }

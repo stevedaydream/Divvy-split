@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { ArrowLeftRight, Pencil, Receipt, Trash2 } from 'lucide-vue-next'
+import { ArrowLeftRight, Pencil, Trash2 } from 'lucide-vue-next'
+import { categoryEmoji } from '@/data/categories'
 import { formatNumber } from '@/lib/money'
 import type { CurrencyCode } from '@/types/currency'
 import type { Entry, Group } from '@/types/models'
@@ -32,7 +33,10 @@ const showOriginal = computed(() => props.entry.currency !== props.currency)
       class="grid size-9 shrink-0 place-items-center rounded-full"
       :class="isSettlement ? 'bg-accent-soft text-accent' : 'bg-surface-2 text-muted'"
     >
-      <component :is="isSettlement ? ArrowLeftRight : Receipt" class="size-4" :stroke-width="1.75" />
+      <ArrowLeftRight v-if="isSettlement" class="size-4" :stroke-width="1.75" />
+      <span v-else class="text-base" role="img" :aria-label="$t(`category.${entry.category}`)">
+        {{ categoryEmoji(entry.category) }}
+      </span>
     </span>
 
     <div class="min-w-0 flex-1">
@@ -46,6 +50,7 @@ const showOriginal = computed(() => props.entry.currency !== props.currency)
         <template v-if="entry.method === 'linepay'">
           · {{ showOriginal ? $t('line.tagConverted') : 'LINE Pay' }}
         </template>
+        <template v-if="!isSettlement && entry.note"> · {{ entry.note }}</template>
       </p>
     </div>
 

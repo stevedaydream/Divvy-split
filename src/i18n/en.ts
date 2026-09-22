@@ -70,6 +70,7 @@ export default {
 
   invite: {
     action: 'Invite',
+    companion: 'Invite a travel companion',
     copy: 'Share invite link',
     shareText: 'Join "{name}" to split expenses:',
     copied: 'Invite link copied.',
@@ -107,6 +108,14 @@ export default {
     deleteMessage: 'It will be removed for everyone in the group.',
     deleted: 'Entry deleted.',
     onlyAuthorCanEdit: 'Only the person who added an entry can change it.',
+    date: 'Date',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    dateRequired: 'Pick a date.',
+    category: 'Category',
+    notePlaceholder: 'Note (optional)',
+    justMe: 'Just me',
+    tabs: { ledger: 'Ledger', itinerary: 'Itinerary', stats: 'Stats' },
   },
 
   settle: {
@@ -168,6 +177,30 @@ export default {
     swap: 'Swap with base',
     locate: 'Use local currency',
     locateUnknown: 'Could not tell the local currency here.',
+  },
+
+  category: {
+    food: 'Food', transport: 'Transport', lodging: 'Lodging',
+    shopping: 'Shopping', fun: 'Tickets & fun', other: 'Other',
+  },
+
+  stats: {
+    scope: { all: 'Everyone', mine: 'My spending' },
+    total: 'Total spent',
+    myTotal: 'My spending',
+    dailyAverage: '{days} days, {amount} a day on average',
+    byCategory: 'By category',
+    byDay: 'By day',
+    actual: 'Actual',
+    estimated: 'Estimated',
+    chartType: 'Chart type',
+    chartBar: 'Bar chart',
+    chartDoughnut: 'Doughnut chart',
+    chartLine: 'Line chart',
+    chartCumulative: 'Cumulative line chart',
+    chartFailed: 'Could not load the chart — check your connection.',
+    empty: 'No spending yet',
+    emptyHint: 'Add an expense to see category and daily breakdowns.',
   },
 
   country: {

@@ -43,6 +43,9 @@ export default defineConfig({
       output: {
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return
+          // Chart.js is dynamically imported by the stats tab; leaving it
+          // unassigned keeps it in its own lazy chunk instead of the eager vendor one.
+          if (id.includes('/chart.js/') || id.includes('@kurkle')) return
           if (id.includes('firebase') || id.includes('@firebase')) return 'firebase'
           if (id.includes('/vue/') || id.includes('pinia') || id.includes('vue-router') || id.includes('vue-i18n')) {
             return 'vue-libs'

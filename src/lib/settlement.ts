@@ -48,19 +48,31 @@ export function computeBalances(entries: Entry[], memberIds: string[]): Balances
     }
 
     // An expense: the payer fronted the money, participants each owe a share.
-    const participants = entry.participantIds.filter((uid) => known.has(uid))
-    if (participants.length === 0) continue
+    const shares = expenseShares(entry, known)
+    if (Object.keys(shares).length === 0) continue
 
     balances[entry.payerId] = (balances[entry.payerId] ?? 0) + amount
-
-    const ordered = [...participants].sort()
-    const shares = splitEvenly(amount, ordered.length)
-    ordered.forEach((uid, i) => {
-      balances[uid] = (balances[uid] ?? 0) - (shares[i] ?? 0)
-    })
+    for (const [uid, share] of Object.entries(shares)) {
+      balances[uid] = (balances[uid] ?? 0) - share
+    }
   }
 
   return balances
+}
+
+/**
+ * Each current member's share of one expense. Participants are sorted before
+ * splitting so the remainder always lands on the same people — balances and
+ * per-person spending statistics therefore agree to the last minor unit.
+ */
+export function expenseShares(entry: Entry, members: Set<string>): Record<string, number> {
+  const ordered = entry.participantIds.filter((uid) => members.has(uid)).sort()
+  const shares = splitEvenly(entry.groupAmountMinor, ordered.length)
+  const result: Record<string, number> = {}
+  ordered.forEach((uid, i) => {
+    result[uid] = shares[i] ?? 0
+  })
+  return result
 }
 
 /**

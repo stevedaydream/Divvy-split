@@ -35,5 +35,7 @@ function goBack(): void {
         <slot name="actions" />
       </div>
     </div>
+    <!-- Sticky with the bar itself, e.g. a group's tab strip. -->
+    <slot name="below" />
   </header>
 </template>

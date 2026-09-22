@@ -49,7 +49,7 @@ view 不得直接 import `firebase/firestore`。
 | `/join?g=&c=` | JoinView | 邀請連結入口，驗證 inviteCode 後加入群組 |
 | `/onboarding` | OnboardingView | 暱稱、主要幣別、收款資訊 |
 | `/groups` | GroupsView | 群組列表（底部導航第 1 格） |
-| `/groups/:id` | GroupDetailView | 帳本、成員餘額、結算 |
+| `/groups/:id` | GroupDetailView | 分頁：帳本（依日期分段）／統計；一人群組隱藏結算與成員列 |
 | `/calculator` | CalculatorView | 匯率換算計算機（第 2 格）；定位鈕把基準換成所在地幣別，主要幣別固定排第一 |
 | `/profile` | ProfileView | 個人檔案、語言、外觀、登出（第 3 格） |
 
@@ -78,6 +78,11 @@ view 不得直接 import `firebase/firestore`。
   `groupAmountMinor` 固定為換算前的原始欠款，避免整數新台幣的四捨五入留下尾差。
   `Entry.method = 'linepay'` 標記這筆是用 LINE Pay 付的。
 
+- **分類與消費日期**：`Entry.category` 為固定 6 項代碼（`data/categories.ts`，含依標題自動判斷），
+  `Entry.note` 只給「其他」用；`Entry.date` 為 `YYYY-MM-DD` 字串（`lib/dates.ts`，不含時區）。
+  舊帳目缺欄位時分類視為 `other`、日期取 `createdAt`。查詢仍依 `createdAt`，排序在 client 端做
+  （`compareEntries`：日期新→舊，同日依建立時間）。
+
 詳見 `src/types/models.ts`。
 
 ## 5. 分帳演算法
@@ -88,6 +93,11 @@ view 不得直接 import `firebase/firestore`。
 - `computeBalances(entries, memberIds)` — 每位成員的淨額，總和恆為 0。
 - `computeSettlements(balances)` — 貪婪配對最大債務人與最大債權人，
   產生至多 `成員數 − 1` 筆轉帳。
+- `expenseShares(entry, members)` — 單筆支出每人分攤額，結算與統計共用，兩邊數字一致。
+
+`src/lib/stats.ts`（統計分頁用）：`spendItems`（全體或某人的分攤，排除還款）、
+`byCategory`、`byDay`（空白日補 0）、`cumulative`。圖表為 `components/charts/ChartCanvas.vue`，
+Chart.js 以 dynamic import 載入；`vite.config.ts` 的 manualChunks 刻意不把它併入 vendor。
 
 ## 6. 安全性
 

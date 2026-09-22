@@ -15,6 +15,9 @@ function expense(payerId: string, participantIds: string[], groupAmountMinor: nu
     rate: 1,
     groupAmountMinor,
     method: null,
+    category: 'other',
+    note: '',
+    date: '2026-10-01',
     createdAt: null,
     createdBy: payerId,
   }

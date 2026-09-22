@@ -70,6 +70,7 @@ export default {
 
   invite: {
     action: '邀請成員',
+    companion: '邀請同行者',
     copy: '分享邀請連結',
     shareText: '加入「{name}」一起分帳：',
     copied: '邀請連結已複製。',
@@ -107,6 +108,14 @@ export default {
     deleteMessage: '所有群組成員都會看不到這筆帳目。',
     deleted: '帳目已刪除。',
     onlyAuthorCanEdit: '只有記帳的人可以修改這筆帳目。',
+    date: '日期',
+    today: '今天',
+    yesterday: '昨天',
+    dateRequired: '請選擇日期。',
+    category: '分類',
+    notePlaceholder: '備註（選填）',
+    justMe: '只有我',
+    tabs: { ledger: '帳本', itinerary: '行程', stats: '統計' },
   },
 
   settle: {
@@ -168,6 +177,30 @@ export default {
     swap: '與基準幣別互換',
     locate: '換成目前所在地幣別',
     locateUnknown: '無法判斷所在地的幣別。',
+  },
+
+  category: {
+    food: '餐飲', transport: '交通', lodging: '住宿',
+    shopping: '購物', fun: '門票娛樂', other: '其他',
+  },
+
+  stats: {
+    scope: { all: '全體', mine: '我的花費' },
+    total: '總花費',
+    myTotal: '我的花費',
+    dailyAverage: '{days} 天，平均每天 {amount}',
+    byCategory: '依分類',
+    byDay: '依日期',
+    actual: '實際',
+    estimated: '預估',
+    chartType: '圖表類型',
+    chartBar: '長條圖',
+    chartDoughnut: '圓環圖',
+    chartLine: '折線圖',
+    chartCumulative: '累積折線圖',
+    chartFailed: '圖表載入失敗，請檢查網路連線。',
+    empty: '還沒有花費',
+    emptyHint: '記下支出後，這裡會顯示分類與每日統計。',
   },
 
   country: {

@@ -9,6 +9,7 @@ import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 import EntryRow from '@/components/group/EntryRow.vue'
 import EntrySheet from '@/components/group/EntrySheet.vue'
+import GroupStats from '@/components/group/GroupStats.vue'
 import MemberStrip from '@/components/group/MemberStrip.vue'
 import SettlementSheet from '@/components/group/SettlementSheet.vue'
 import { useGroupDetail } from '@/composables/useGroupDetail'
@@ -17,6 +18,7 @@ import { useInvite } from '@/composables/useInvite'
 import { useToast } from '@/composables/useToast'
 import { createEntry, deleteEntry, updateEntry, type EntryDraft } from '@/services/entries'
 import { placeLabel } from '@/data/countries'
+import { formatDay } from '@/lib/dates'
 import { formatNumber } from '@/lib/money'
 import { useAuthStore } from '@/stores/auth'
 import { useRatesStore } from '@/stores/rates'
@@ -43,11 +45,33 @@ onMounted(() => {
   void rates.load()
 })
 
+type GroupTab = 'ledger' | 'stats'
+const TABS: GroupTab[] = ['ledger', 'stats']
+const tab = ref<GroupTab>('ledger')
+
+/** A group of one has nobody to settle with or filter by. */
+const shared = computed(() => (group.value?.memberIds.length ?? 0) > 1)
+
 const visibleEntries = computed(() =>
   selectedMember.value === 'all'
     ? entries.value
     : entries.value.filter((entry) => entry.payerId === selectedMember.value),
 )
+
+/** The ledger split into days, each with its spending subtotal. */
+const entryDays = computed(() => {
+  const days: { date: string; entries: Entry[]; subtotal: number }[] = []
+  for (const entry of visibleEntries.value) {
+    let day = days[days.length - 1]
+    if (!day || day.date !== entry.date) {
+      day = { date: entry.date, entries: [], subtotal: 0 }
+      days.push(day)
+    }
+    day.entries.push(entry)
+    if (entry.type === 'expense') day.subtotal += entry.groupAmountMinor
+  }
+  return days
+})
 
 function openAdd(): void {
   editingEntry.value = null
@@ -111,7 +135,28 @@ function copyInvite(): void {
       :title="group?.name"
       :subtitle="(group && placeLabel(group.location, group.destination, locale)) || undefined"
       back
-    />
+    >
+      <template v-if="group" #below>
+        <nav class="flex gap-1 px-4" role="tablist">
+          <button
+            v-for="option in TABS"
+            :key="option"
+            role="tab"
+            class="relative flex-1 py-2.5 text-sm font-medium transition-colors"
+            :class="tab === option ? 'text-fg' : 'text-muted hover:text-fg'"
+            :aria-selected="tab === option"
+            @click="tab = option"
+          >
+            {{ $t(`group.tabs.${option}`) }}
+            <span
+              v-if="tab === option"
+              class="absolute inset-x-6 -bottom-px h-0.5 rounded-full bg-accent"
+              aria-hidden="true"
+            />
+          </button>
+        </nav>
+      </template>
+    </TopBar>
 
     <div v-if="loading" class="px-5 py-6">
       <AppSkeleton :rows="1" height="h-24" />
@@ -119,21 +164,35 @@ function copyInvite(): void {
     </div>
 
     <template v-else-if="group">
+      <GroupStats
+        v-if="tab === 'stats'"
+        :group="group"
+        :entries="entries"
+        :uid="auth.uid ?? ''"
+        :locale="locale"
+      />
+
+      <template v-else>
       <section class="px-5 pb-5 pt-6 text-center">
         <p class="text-xs font-medium text-muted">{{ $t('group.total') }}</p>
         <p class="tabular mt-1 text-3xl font-semibold tracking-tight">
           {{ formatNumber(total, group.currency, locale) }}
           <span class="text-base font-normal text-muted">{{ group.currency }}</span>
         </p>
-      </section>
-
-      <!-- Labelled actions instead of bare top-bar icons, which people missed.
-           A group of one has nothing to split yet, so inviting is the primary step. -->
-      <section class="grid grid-cols-2 gap-3 px-5 pb-6">
-        <AppButton
-          :variant="group.memberIds.length === 1 ? 'primary' : 'secondary'"
+        <!-- A personal trip rarely needs inviting, so it stays a quiet link. -->
+        <button
+          v-if="!shared"
+          class="mt-2 inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent"
           @click="copyInvite"
         >
+          <UserPlus class="size-3.5" />
+          {{ $t('invite.companion') }}
+        </button>
+      </section>
+
+      <!-- Labelled actions instead of bare top-bar icons, which people missed. -->
+      <section v-if="shared" class="grid grid-cols-2 gap-3 px-5 pb-6">
+        <AppButton variant="secondary" @click="copyInvite">
           <template #icon><UserPlus class="size-4" /></template>
           {{ $t('invite.action') }}
         </AppButton>
@@ -145,7 +204,7 @@ function copyInvite(): void {
         </AppButton>
       </section>
 
-      <section class="px-5 pb-6">
+      <section v-if="shared" class="px-5 pb-6">
         <MemberStrip
           :group="group"
           :balances="balances"
@@ -156,9 +215,7 @@ function copyInvite(): void {
         />
       </section>
 
-      <section class="px-5 pb-5">
-        <h2 class="mb-3 text-xs font-medium text-muted">{{ $t('group.ledger') }}</h2>
-
+      <section class="px-5 pb-28">
         <AppEmptyState
           v-if="!visibleEntries.length"
           :icon="Receipt"
@@ -166,20 +223,31 @@ function copyInvite(): void {
           :description="$t('group.noEntriesHint')"
         />
 
-        <TransitionGroup v-else name="list" tag="div" class="relative space-y-2.5">
-          <EntryRow
-            v-for="entry in visibleEntries"
-            :key="entry.id"
-            :entry="entry"
-            :group="group"
-            :currency="group.currency"
-            :locale="locale"
-            :can-edit="entry.createdBy === auth.uid"
-            @edit="openEdit(entry)"
-            @remove="remove(entry)"
-          />
-        </TransitionGroup>
+        <div v-else class="space-y-5">
+          <section v-for="day in entryDays" :key="day.date">
+            <header class="mb-2 flex items-baseline justify-between text-xs">
+              <h2 class="font-medium text-muted">{{ formatDay(day.date, locale) }}</h2>
+              <span v-if="day.subtotal" class="tabular text-faint">
+                {{ formatNumber(day.subtotal, group.currency, locale) }} {{ group.currency }}
+              </span>
+            </header>
+            <TransitionGroup name="list" tag="div" class="relative space-y-2.5">
+              <EntryRow
+                v-for="entry in day.entries"
+                :key="entry.id"
+                :entry="entry"
+                :group="group"
+                :currency="group.currency"
+                :locale="locale"
+                :can-edit="entry.createdBy === auth.uid"
+                @edit="openEdit(entry)"
+                @remove="remove(entry)"
+              />
+            </TransitionGroup>
+          </section>
+        </div>
       </section>
+      </template>
 
       <button
         class="fixed bottom-6 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
