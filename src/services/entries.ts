@@ -3,7 +3,7 @@ import {
   serverTimestamp, updateDoc, where,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import type { Entry, EntryType } from '@/types/models'
+import type { Entry, EntryType, SettlementMethod } from '@/types/models'
 import type { CurrencyCode } from '@/types/currency'
 
 const COLLECTION = 'entries'
@@ -20,6 +20,7 @@ function toEntry(id: string, data: Record<string, unknown>): Entry {
     currency: (data.currency as string) ?? 'USD',
     rate: (data.rate as number) ?? 1,
     groupAmountMinor: (data.groupAmountMinor as number) ?? 0,
+    method: (data.method as SettlementMethod) ?? null,
     createdAt: (data.createdAt as Entry['createdAt']) ?? null,
     createdBy: (data.createdBy as string) ?? '',
   }
@@ -54,6 +55,7 @@ export interface EntryDraft {
   /** Captured at write time so the entry never re-prices itself later. */
   rate: number
   groupAmountMinor: number
+  method: SettlementMethod | null
 }
 
 export async function createEntry(draft: EntryDraft, uid: string): Promise<string> {

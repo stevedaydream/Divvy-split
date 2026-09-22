@@ -70,6 +70,13 @@ view 不得直接 import `firebase/firestore`。
 - `UserProfile.country` 存所屬國家的 ISO 3166-1 alpha-2 代碼（`data/countries.ts`），
   名稱以 `Intl.DisplayNames` 依語系顯示。選國家時由 `currencyForCountry()` 帶入主要幣別。
   GPS 定位（`lib/geo.ts`）只用來猜幣別，不會寫進個人檔案。
+- `Group.destination` 存目的地國家代碼，新增群組時由它帶入群組幣別（建立後幣別仍不可改）；
+  `Group.location` 是選填的城市／地區文字。顯示一律用 `placeLabel()` 組成「東京 · 日本」。
+- **LINE Pay 還款**：`PaymentInfo.lineId`（選填）。LINE 沒有公開的轉帳／預填金額 URL scheme，
+  所以按鈕只複製金額並開啟對方的個人頁（`lib/line.ts`）。LINE Pay Money 只收新台幣：
+  群組幣別不是 TWD 時，先用即時匯率預覽並確認換算，帳目存成 `currency: 'TWD'`，
+  `groupAmountMinor` 固定為換算前的原始欠款，避免整數新台幣的四捨五入留下尾差。
+  `Entry.method = 'linepay'` 標記這筆是用 LINE Pay 付的。
 
 詳見 `src/types/models.ts`。
 

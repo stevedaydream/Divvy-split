@@ -14,6 +14,7 @@ function toGroup(id: string, data: Record<string, unknown>): Group {
     id,
     name: (data.name as string) ?? '',
     currency: (data.currency as string) ?? 'USD',
+    destination: (data.destination as string) ?? '',
     location: (data.location as string) ?? '',
     ownerId: (data.ownerId as string) ?? '',
     memberIds: (data.memberIds as string[]) ?? [],
@@ -54,6 +55,7 @@ export function watchGroup(
 export interface CreateGroupInput {
   name: string
   currency: CurrencyCode
+  destination: string
   location: string
   owner: { uid: string; member: GroupMember }
 }
@@ -62,6 +64,7 @@ export async function createGroup(input: CreateGroupInput): Promise<string> {
   const ref = await addDoc(collection(db, COLLECTION), {
     name: input.name,
     currency: input.currency,
+    destination: input.destination,
     location: input.location,
     ownerId: input.owner.uid,
     memberIds: [input.owner.uid],
@@ -77,7 +80,7 @@ export async function createGroup(input: CreateGroupInput): Promise<string> {
 /** The group currency is immutable once entries exist, so it is not editable. */
 export async function updateGroup(
   groupId: string,
-  patch: Pick<Partial<Group>, 'name' | 'location' | 'archived'>,
+  patch: Pick<Partial<Group>, 'name' | 'destination' | 'location' | 'archived'>,
 ): Promise<void> {
   await updateDoc(doc(db, COLLECTION, groupId), { ...patch, updatedAt: serverTimestamp() })
 }

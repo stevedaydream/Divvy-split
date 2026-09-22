@@ -5,6 +5,8 @@ import type { CurrencyCode } from './currency'
 export interface PaymentInfo {
   bankName: string
   bankAccount: string
+  /** LINE ID for LINE Pay transfers. Absent on profiles saved before it existed. */
+  lineId?: string
 }
 
 export interface UserProfile {
@@ -31,6 +33,9 @@ export interface Group {
   name: string
   /** Every amount in the group settles into this currency. */
   currency: CurrencyCode
+  /** ISO 3166-1 alpha-2 code of the trip's destination country, or empty. */
+  destination: string
+  /** Free-text city or area within the destination, e.g. "Tokyo". */
   location: string
   ownerId: string
   /** Kept flat so Firestore can query it with `array-contains`. */
@@ -45,6 +50,9 @@ export interface Group {
 }
 
 export type EntryType = 'expense' | 'settlement'
+
+/** How a settlement was paid, when the app helped make the payment. */
+export type SettlementMethod = 'linepay'
 
 /**
  * One line in a group's ledger.
@@ -69,6 +77,7 @@ export interface Entry {
   rate: number
   /** `amountMinor` converted into the group currency's minor unit. */
   groupAmountMinor: number
+  method: SettlementMethod | null
   createdAt: Timestamp | null
   createdBy: string
 }

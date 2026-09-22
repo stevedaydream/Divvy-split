@@ -92,16 +92,19 @@ async function signOut(): Promise<void> {
 
         <div class="flex items-center justify-between px-5 py-4">
           <div class="min-w-0">
-            <p class="truncate text-sm font-medium">
+            <p v-if="!profile?.payment || profile.payment.bankName" class="truncate text-sm font-medium">
               {{ profile?.payment?.bankName || t('profile.noPayment') }}
             </p>
-            <p v-if="profile?.payment" class="tabular mt-0.5 font-mono text-sm text-muted">
+            <p v-if="profile?.payment?.bankAccount" class="tabular mt-0.5 font-mono text-sm text-muted">
               {{ revealed ? profile.payment.bankAccount : maskedAccount }}
+            </p>
+            <p v-if="profile?.payment?.lineId" class="mt-0.5 truncate text-sm text-muted">
+              LINE ID · {{ profile.payment.lineId }}
             </p>
           </div>
 
           <button
-            v-if="profile?.payment"
+            v-if="profile?.payment?.bankAccount"
             class="grid size-9 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
             :aria-label="revealed ? t('profile.hide') : t('profile.reveal')"
             @click="revealed = !revealed"

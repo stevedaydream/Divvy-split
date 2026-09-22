@@ -14,6 +14,7 @@ import { useGroupDetail } from '@/composables/useGroupDetail'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
 import { createEntry, deleteEntry, updateEntry, type EntryDraft } from '@/services/entries'
+import { placeLabel } from '@/data/countries'
 import { formatNumber } from '@/lib/money'
 import { useAuthStore } from '@/stores/auth'
 import { useRatesStore } from '@/stores/rates'
@@ -112,7 +113,11 @@ async function copyInvite(): Promise<void> {
 
 <template>
   <AppShell>
-    <TopBar :title="group?.name" :subtitle="group?.location || undefined" back>
+    <TopBar
+      :title="group?.name"
+      :subtitle="(group && placeLabel(group.location, group.destination, locale)) || undefined"
+      back
+    >
       <template #actions>
         <button
           class="grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"

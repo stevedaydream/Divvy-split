@@ -14,6 +14,7 @@ function expense(payerId: string, participantIds: string[], groupAmountMinor: nu
     currency: 'TWD',
     rate: 1,
     groupAmountMinor,
+    method: null,
     createdAt: null,
     createdBy: payerId,
   }

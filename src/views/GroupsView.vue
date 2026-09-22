@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { Link2, MapPin, Plus, RotateCw, Trash2, Users } from 'lucide-vue-next'
+import { ChevronDown, Link2, MapPin, Plus, RotateCw, Trash2, Users } from 'lucide-vue-next'
 import AppShell from '@/components/layout/AppShell.vue'
 import TopBar from '@/components/layout/TopBar.vue'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -12,7 +12,9 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppSheet from '@/components/ui/AppSheet.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 import GroupCard from '@/components/group/GroupCard.vue'
+import CountryPicker from '@/components/currency/CountryPicker.vue'
 import CurrencyPicker from '@/components/currency/CurrencyPicker.vue'
+import { countryName } from '@/data/countries'
 import { currencyForCountry, currencyName } from '@/data/currencies'
 import { detectLocation } from '@/lib/geo'
 import { createGroup, deleteGroup, leaveGroup, rotateInviteCode, updateGroup } from '@/services/groups'
@@ -23,7 +25,7 @@ import { useToast } from '@/composables/useToast'
 import type { CurrencyCode } from '@/types/currency'
 import type { Group } from '@/types/models'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const auth = useAuthStore()
 const store = useGroupsStore()
 const router = useRouter()
@@ -39,19 +41,20 @@ watch(
 const formOpen = ref(false)
 const optionsOpen = ref(false)
 const pickerOpen = ref(false)
+const destinationPickerOpen = ref(false)
 const editing = ref<Group | null>(null)
 const selected = ref<Group | null>(null)
 const detecting = ref(false)
 const saving = ref(false)
 const formError = ref('')
 
-const form = ref({ name: '', currency: 'USD' as CurrencyCode, location: '' })
+const form = ref({ name: '', currency: 'USD' as CurrencyCode, destination: '', location: '' })
 const isOwner = computed(() => selected.value?.ownerId === auth.uid)
 
 function openCreate(): void {
   editing.value = null
   formError.value = ''
-  form.value = { name: '', currency: auth.profile?.currency ?? 'USD', location: '' }
+  form.value = { name: '', currency: auth.profile?.currency ?? 'USD', destination: '', location: '' }
   formOpen.value = true
 }
 
@@ -60,7 +63,12 @@ function openEdit(): void {
   if (!group) return
   editing.value = group
   formError.value = ''
-  form.value = { name: group.name, currency: group.currency, location: group.location }
+  form.value = {
+    name: group.name,
+    currency: group.currency,
+    destination: group.destination,
+    location: group.location,
+  }
   optionsOpen.value = false
   formOpen.value = true
 }
@@ -70,17 +78,28 @@ function openOptions(group: Group): void {
   optionsOpen.value = true
 }
 
+/**
+ * Only a brand-new group adopts the destination's currency; changing it later
+ * would invalidate every amount already converted into it.
+ */
+function setDestination(code: string): void {
+  form.value.destination = code
+  if (editing.value) return
+  const local = currencyForCountry(code)
+  if (local) form.value.currency = local
+}
+
+function pickDestination(code: string): void {
+  setDestination(code)
+  destinationPickerOpen.value = false
+}
+
 async function detect(): Promise<void> {
   detecting.value = true
   try {
     const result = await detectLocation()
-    if (result.label) form.value.location = result.label
-    // Only a brand-new group adopts the detected currency; changing it later
-    // would invalidate every amount already converted into it.
-    if (!editing.value) {
-      const guessed = currencyForCountry(result.countryCode)
-      if (guessed) form.value.currency = guessed
-    }
+    if (result.countryCode) setDestination(result.countryCode.toUpperCase())
+    if (result.city) form.value.location = result.city
   } catch {
     toast.error(t('onboarding.detectFailed'))
   } finally {
@@ -101,12 +120,17 @@ async function save(): Promise<void> {
   saving.value = true
   try {
     if (editing.value) {
-      await updateGroup(editing.value.id, { name, location: form.value.location.trim() })
+      await updateGroup(editing.value.id, {
+        name,
+        destination: form.value.destination,
+        location: form.value.location.trim(),
+      })
       toast.success(t('groups.updated'))
     } else {
       await createGroup({
         name,
         currency: form.value.currency,
+        destination: form.value.destination,
         location: form.value.location.trim(),
         owner: {
           uid: profile.uid,
@@ -244,9 +268,28 @@ async function leave(): Promise<void> {
           <p v-if="formError" class="text-xs text-negative">{{ formError }}</p>
         </AppField>
 
+        <AppField :label="t('groups.destination')">
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="flex h-11 min-w-0 flex-1 items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors hover:border-border-strong"
+              @click="destinationPickerOpen = true"
+            >
+              <span class="truncate" :class="form.destination ? 'font-medium' : 'text-faint'">
+                {{ form.destination ? countryName(form.destination, locale) : t('onboarding.countryPlaceholder') }}
+              </span>
+              <ChevronDown class="size-4 shrink-0 text-muted" />
+            </button>
+            <AppButton variant="secondary" :loading="detecting" @click="detect">
+              <template #icon><MapPin class="size-4" /></template>
+              <span class="sr-only">{{ t('onboarding.detect') }}</span>
+            </AppButton>
+          </div>
+        </AppField>
+
         <AppField
           :label="t('common.currency')"
-          :hint="editing ? t('groups.currencyLocked') : undefined"
+          :hint="editing ? t('groups.currencyLocked') : t('groups.currencyFollowsDestination')"
         >
           <button
             type="button"
@@ -259,18 +302,12 @@ async function leave(): Promise<void> {
           </button>
         </AppField>
 
-        <AppField :label="t('common.location')" for="group-location">
-          <div class="flex gap-2">
-            <AppInput
-              id="group-location"
-              v-model="form.location"
-              :placeholder="t('groups.locationPlaceholder')"
-            />
-            <AppButton variant="secondary" :loading="detecting" @click="detect">
-              <template #icon><MapPin class="size-4" /></template>
-              <span class="sr-only">{{ t('onboarding.detect') }}</span>
-            </AppButton>
-          </div>
+        <AppField :label="t('groups.city')" for="group-location">
+          <AppInput
+            id="group-location"
+            v-model="form.location"
+            :placeholder="t('groups.locationPlaceholder')"
+          />
         </AppField>
       </div>
 
@@ -341,6 +378,14 @@ async function leave(): Promise<void> {
       :selected="form.currency"
       @close="pickerOpen = false"
       @select="form.currency = $event; pickerOpen = false"
+    />
+
+    <CountryPicker
+      :open="destinationPickerOpen"
+      :title="t('groups.destination')"
+      :selected="form.destination"
+      @close="destinationPickerOpen = false"
+      @select="pickDestination"
     />
   </AppShell>
 </template>

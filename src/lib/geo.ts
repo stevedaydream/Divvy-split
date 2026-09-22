@@ -1,5 +1,6 @@
 export interface GeoResult {
   label: string
+  city: string
   countryCode: string | null
 }
 
@@ -37,5 +38,5 @@ export async function detectLocation(timeoutMs = 10_000): Promise<GeoResult> {
   const country = data.countryName || ''
   const label = [city, country].filter(Boolean).join(', ')
 
-  return { label, countryCode: data.countryCode ?? null }
+  return { label, city, countryCode: data.countryCode ?? null }
 }

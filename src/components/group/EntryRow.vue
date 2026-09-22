@@ -43,6 +43,9 @@ const showOriginal = computed(() => props.entry.currency !== props.currency)
         {{ isSettlement
           ? $t('group.transferTo', { name: subtitle })
           : $t('group.paidBy', { name: subtitle }) }}
+        <template v-if="entry.method === 'linepay'">
+          · {{ showOriginal ? $t('line.tagConverted') : 'LINE Pay' }}
+        </template>
       </p>
     </div>
 

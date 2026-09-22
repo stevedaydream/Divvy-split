@@ -6,11 +6,16 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppSheet from '@/components/ui/AppSheet.vue'
 import AmountInput from '@/components/currency/AmountInput.vue'
 import CurrencyPicker from '@/components/currency/CurrencyPicker.vue'
+import { lineProfileUrl } from '@/lib/line'
 import { convertMinor, formatNumber, toMajor, toMinor } from '@/lib/money'
 import { useRatesStore } from '@/stores/rates'
+import { useToast } from '@/composables/useToast'
 import type { EntryDraft } from '@/services/entries'
 import type { CurrencyCode } from '@/types/currency'
-import type { Entry, EntryType, Group } from '@/types/models'
+import type { Entry, EntryType, Group, SettlementMethod } from '@/types/models'
+
+/** LINE Pay Money only moves New Taiwan Dollars. */
+const LINE_PAY_CURRENCY: CurrencyCode = 'TWD'
 
 const props = defineProps<{
   open: boolean
@@ -27,6 +32,7 @@ const emit = defineEmits<{ close: []; save: [draft: EntryDraft] }>()
 
 const { t } = useI18n()
 const rates = useRatesStore()
+const toast = useToast()
 
 const tab = ref<EntryType>('expense')
 const title = ref('')
@@ -44,12 +50,30 @@ const error = ref('')
  */
 const originalRate = ref<number | null>(null)
 
+/**
+ * Pins the group-currency figure to an exact amount while `currency` and the
+ * typed amount still match. Set by a confirmed LINE Pay conversion, so paying
+ * a rounded NT$ figure still clears exactly the debt it was converted from
+ * instead of leaving a few units of residue.
+ */
+const pinned = ref<{ currency: CurrencyCode; minor: number; groupMinor: number } | null>(null)
+const method = ref<SettlementMethod | null>(null)
+const previewOpen = ref(false)
+
 const others = computed(() => props.group.memberIds.filter((uid) => uid !== props.uid))
 
 const liveRate = computed(() => rates.rate(currency.value, props.group.currency))
 
+const activePin = computed(() => {
+  const pin = pinned.value
+  if (!pin || pin.currency !== currency.value) return null
+  return pin.minor === toMinor(amount.value, currency.value) ? pin : null
+})
+
 const effectiveRate = computed(() => {
   if (currency.value === props.group.currency) return 1
+  const pin = activePin.value
+  if (pin) return toMajor(pin.groupMinor, props.group.currency) / toMajor(pin.minor, pin.currency)
   const entry = props.entry
   const unchanged =
     entry &&
@@ -60,8 +84,69 @@ const effectiveRate = computed(() => {
 })
 
 const convertedMinor = computed(() =>
+  activePin.value?.groupMinor ??
   convertMinor(toMinor(amount.value, currency.value), currency.value, props.group.currency, effectiveRate.value),
 )
+
+const recipientLineId = computed(() => {
+  if (!recipient.value) return ''
+  return props.group.members[recipient.value]?.payment?.lineId?.trim() ?? ''
+})
+
+/** What the current amount would be in NT$, at today's rate. */
+const twdPreview = computed(() => {
+  const sourceMinor = toMinor(amount.value, currency.value)
+  const rate = rates.rate(currency.value, LINE_PAY_CURRENCY)
+  if (sourceMinor <= 0 || !rate) return null
+  // LINE Pay Money transfers whole dollars only.
+  const twdMinor = toMinor(Math.round(toMajor(sourceMinor, currency.value) * rate), LINE_PAY_CURRENCY)
+  return { sourceMinor, rate, twdMinor }
+})
+
+const rateTime = computed(() =>
+  rates.fetchedAt
+    ? new Date(rates.fetchedAt).toLocaleTimeString(props.locale, { hour: '2-digit', minute: '2-digit' })
+    : '',
+)
+
+function formatTwd(minor: number): string {
+  return new Intl.NumberFormat(props.locale, { maximumFractionDigits: 0 }).format(
+    toMajor(minor, LINE_PAY_CURRENCY),
+  )
+}
+
+function openPreview(): void {
+  void rates.load()
+  previewOpen.value = true
+}
+
+function confirmConversion(): void {
+  const preview = twdPreview.value
+  if (!preview) return
+  pinned.value = {
+    currency: LINE_PAY_CURRENCY,
+    minor: preview.twdMinor,
+    groupMinor: convertedMinor.value,
+  }
+  currency.value = LINE_PAY_CURRENCY
+  amount.value = String(toMajor(preview.twdMinor, LINE_PAY_CURRENCY))
+  previewOpen.value = false
+}
+
+/**
+ * Copies the amount and opens the recipient's LINE profile. Both calls stay
+ * synchronous inside the click so mobile browsers keep the user gesture.
+ */
+function payWithLine(): void {
+  const minor = toMinor(amount.value, currency.value)
+  const text = String(Math.round(toMajor(minor, LINE_PAY_CURRENCY)))
+  navigator.clipboard?.writeText(text).then(
+    () => toast.success(t('line.copied', { amount: formatTwd(minor) })),
+    () => toast.info(t('line.copyFailed', { amount: formatTwd(minor) }), 8000),
+  )
+  method.value = 'linepay'
+  window.open(lineProfileUrl(recipientLineId.value), '_blank', 'noopener')
+}
 
 const showConversion = computed(() => currency.value !== props.group.currency && amount.value !== '')
 
@@ -71,6 +156,9 @@ watch(
     if (!open) return
     error.value = ''
     pickerOpen.value = false
+    previewOpen.value = false
+    pinned.value = null
+    method.value = props.entry?.method ?? null
 
     const entry = props.entry
     if (entry) {
@@ -143,6 +231,7 @@ function submit(): void {
     currency: currency.value,
     rate: effectiveRate.value,
     groupAmountMinor: convertedMinor.value,
+    method: isSettlement ? method.value : null,
   })
 }
 </script>
@@ -238,6 +327,56 @@ function submit(): void {
           </p>
         </template>
         <p v-else class="mt-1.5 text-xs text-faint">{{ t('settle.noPaymentInfo') }}</p>
+      </div>
+
+      <div v-if="recipientLineId" class="mt-3 rounded-card border border-border bg-surface-2 p-4">
+        <h4 class="text-xs font-medium text-muted">LINE Pay</h4>
+
+        <template v-if="currency !== LINE_PAY_CURRENCY">
+          <p class="mt-1.5 text-xs leading-relaxed text-muted">{{ t('line.needsTwd') }}</p>
+
+          <div v-if="previewOpen" class="mt-3 rounded-xl border border-border bg-surface p-3">
+            <template v-if="twdPreview">
+              <p class="tabular text-sm">
+                {{ currency }} {{ formatNumber(twdPreview.sourceMinor, currency, locale) }}
+                → <span class="font-semibold text-accent">NT$ {{ formatTwd(twdPreview.twdMinor) }}</span>
+              </p>
+              <p class="tabular mt-1 text-[11px] text-faint">
+                1 {{ currency }} = {{ twdPreview.rate.toFixed(4) }} TWD · {{ t('line.rateAt', { time: rateTime }) }}
+              </p>
+              <div class="mt-3 grid grid-cols-2 gap-2">
+                <AppButton variant="secondary" size="sm" @click="previewOpen = false">
+                  {{ t('common.cancel') }}
+                </AppButton>
+                <AppButton size="sm" @click="confirmConversion">{{ t('line.confirmConvert') }}</AppButton>
+              </div>
+            </template>
+            <p v-else class="text-xs text-negative">
+              {{ rates.loading ? t('common.loading') : t('currency.unavailable') }}
+            </p>
+          </div>
+
+          <div v-else class="mt-3">
+            <AppButton variant="secondary" size="sm" block @click="openPreview">
+              {{ t('line.convert') }}
+            </AppButton>
+          </div>
+        </template>
+
+        <template v-else>
+          <p v-if="activePin" class="tabular mt-1.5 text-[11px] text-faint">
+            {{ t('line.convertedFrom', {
+              amount: formatNumber(activePin.groupMinor, group.currency, locale),
+              currency: group.currency,
+            }) }}
+          </p>
+          <div class="mt-3">
+            <AppButton block @click="payWithLine">
+              {{ t('line.pay', { amount: formatTwd(toMinor(amount, currency)) }) }}
+            </AppButton>
+          </div>
+          <p class="mt-2 text-[11px] leading-relaxed text-faint">{{ t('line.steps') }}</p>
+        </template>
       </div>
     </section>
 

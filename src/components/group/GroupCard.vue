@@ -1,9 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { MapPin, MoreVertical, Users } from 'lucide-vue-next'
+import { placeLabel } from '@/data/countries'
 import type { Group } from '@/types/models'
 
-defineProps<{ group: Group }>()
+const props = defineProps<{ group: Group }>()
 const emit = defineEmits<{ open: []; options: [] }>()
+
+const { locale } = useI18n()
+const place = computed(() => placeLabel(props.group.location, props.group.destination, locale.value))
 </script>
 
 <template>
@@ -14,9 +20,9 @@ const emit = defineEmits<{ open: []; options: [] }>()
       <h3 class="truncate text-sm font-semibold">{{ group.name }}</h3>
 
       <div class="mt-1.5 flex items-center gap-3 text-xs text-muted">
-        <span v-if="group.location" class="flex min-w-0 items-center gap-1">
+        <span v-if="place" class="flex min-w-0 items-center gap-1">
           <MapPin class="size-3.5 shrink-0" :stroke-width="1.75" />
-          <span class="truncate">{{ group.location }}</span>
+          <span class="truncate">{{ place }}</span>
         </span>
         <span class="flex shrink-0 items-center gap-1">
           <Users class="size-3.5" :stroke-width="1.75" />

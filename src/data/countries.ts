@@ -34,3 +34,8 @@ export function countryName(code: string, locale: string): string {
   }
   return names.of(code) ?? code
 }
+
+/** "Tokyo · Japan", "Japan" or "Tokyo" — whichever parts a group has. */
+export function placeLabel(city: string, country: string, locale: string): string {
+  return [city.trim(), countryName(country, locale)].filter(Boolean).join(' · ')
+}

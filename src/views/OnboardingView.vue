@@ -26,6 +26,7 @@ const country = ref('')
 const currency = ref<CurrencyCode>('USD')
 const bankName = ref('')
 const bankAccount = ref('')
+const lineId = ref('')
 
 const pickerOpen = ref(false)
 const countryPickerOpen = ref(false)
@@ -40,6 +41,7 @@ onMounted(() => {
   currency.value = profile?.currency ?? 'USD'
   bankName.value = profile?.payment?.bankName ?? ''
   bankAccount.value = profile?.payment?.bankAccount ?? ''
+  lineId.value = profile?.payment?.lineId ?? ''
 })
 
 function pickCountry(code: string): void {
@@ -74,11 +76,14 @@ async function submit(): Promise<void> {
 
   try {
     const account = bankAccount.value.trim()
+    const line = lineId.value.trim()
     await auth.updateProfile({
       nickname: nickname.value.trim(),
       country: country.value,
       currency: currency.value,
-      payment: account ? { bankName: bankName.value.trim(), bankAccount: account } : null,
+      payment: account || line
+        ? { bankName: bankName.value.trim(), bankAccount: account, lineId: line }
+        : null,
     })
 
     toast.success(t('onboarding.saved'))
@@ -147,6 +152,8 @@ async function submit(): Promise<void> {
         <div class="mt-4 space-y-3">
           <AppInput v-model="bankName" :placeholder="t('onboarding.bankName')" />
           <AppInput v-model="bankAccount" mono :placeholder="t('onboarding.bankAccount')" />
+          <AppInput v-model="lineId" autocomplete="off" :placeholder="t('onboarding.lineId')" />
+          <p class="text-[11px] leading-relaxed text-faint">{{ t('onboarding.lineIdHint') }}</p>
         </div>
       </section>
 
