@@ -14,7 +14,7 @@
 | 狀態 | Pinia（auth / groups / rates 三個 store） |
 | 語系 | vue-i18n，繁體中文 + 英文 |
 | 測試 | Vitest（分帳演算法、算式解析器） |
-| 部署 | Firebase Hosting（`dev.bat` 手動部署；目前無 CI）→ https://divvy-app-e4565.web.app；`authDomain` 也用 `web.app`（與網站同網域） |
+| 部署 | Firebase Hosting（push 到 `main` 由 GitHub Actions 自動部署；規則／索引仍用 `dev.bat`）→ https://divvy-app-e4565.web.app；`authDomain` 也用 `web.app`（與網站同網域） |
 
 ## 2. 目錄結構
 
