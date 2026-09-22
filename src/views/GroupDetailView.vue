@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { HandCoins, Plus, Receipt, UserPlus } from 'lucide-vue-next'
+import { CircleCheck, HandCoins, Plus, Receipt, UserPlus } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import TopBar from '@/components/layout/TopBar.vue'
@@ -67,6 +67,21 @@ watch(group, (next) => {
 
 /** A group of one has nobody to settle with or filter by. */
 const shared = computed(() => (group.value?.memberIds.length ?? 0) > 1)
+
+/**
+ * What the settle-up button says: debts still open, nothing ever owed, or
+ * all square after some number of repayments.
+ */
+const settlementCount = computed(() => entries.value.filter((e) => e.type === 'settlement').length)
+const settleState = computed<'pending' | 'none' | 'settled'>(() => {
+  if (settlements.value.length) return 'pending'
+  return settlementCount.value ? 'settled' : 'none'
+})
+const settleLabel = computed(() => {
+  if (settleState.value === 'pending') return t('settle.actionPending', { count: settlements.value.length })
+  if (settleState.value === 'settled') return t('settle.actionSettled', { count: settlementCount.value })
+  return t('settle.actionNone')
+})
 
 const visibleEntries = computed(() =>
   selectedMember.value === 'all'
@@ -319,11 +334,12 @@ function copyInvite(): void {
           <template #icon><UserPlus class="size-4" /></template>
           {{ $t('invite.action') }}
         </AppButton>
-        <AppButton variant="secondary" @click="settleSheetOpen = true">
-          <template #icon><HandCoins class="size-4" /></template>
-          {{ settlements.length
-            ? $t('settle.actionPending', { count: settlements.length })
-            : $t('settle.title') }}
+        <AppButton :variant="settleState === 'pending' ? 'primary' : 'secondary'" @click="settleSheetOpen = true">
+          <template #icon>
+            <CircleCheck v-if="settleState === 'settled'" class="size-4 text-positive" />
+            <HandCoins v-else class="size-4" />
+          </template>
+          {{ settleLabel }}
         </AppButton>
       </section>
 

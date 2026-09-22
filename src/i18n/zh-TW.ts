@@ -152,7 +152,9 @@ export default {
     yourDetails: '你的收款資訊',
     addYourDetails: '填寫收款資訊',
     recipientDetails: '對方的收款資訊',
-    actionPending: '結算・{count} 筆',
+    actionPending: '待結算 {count} 筆',
+    actionNone: '未有待分帳款',
+    actionSettled: '已結清・結算 {count} 次',
   },
 
   profile: {

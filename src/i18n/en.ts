@@ -152,7 +152,9 @@ export default {
     yourDetails: 'Your payment details',
     addYourDetails: 'Add your details',
     recipientDetails: 'Their payment details',
-    actionPending: 'Settle up · {count}',
+    actionPending: '{count} to settle',
+    actionNone: 'Nothing to settle',
+    actionSettled: 'All square · settled {count}×',
   },
 
   profile: {
