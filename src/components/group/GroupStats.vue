@@ -5,14 +5,18 @@ import { BarChart3, ChartLine, ChartPie, TrendingUp } from 'lucide-vue-next'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import ChartCanvas, { type ChartSeries } from '@/components/charts/ChartCanvas.vue'
 import { categoryColor, categoryEmoji } from '@/data/categories'
+import { useTheme } from '@/composables/useTheme'
 import { formatShortDay } from '@/lib/dates'
+import { estimatesByDay, hasTripDates, totalEstimate } from '@/lib/itinerary'
 import { decimalsOf, formatNumber, toMajor } from '@/lib/money'
 import { byCategory, byDay, cumulative, spendItems, sumItems } from '@/lib/stats'
-import type { Entry, Group } from '@/types/models'
+import type { Entry, Group, ItineraryItem } from '@/types/models'
 
 const props = defineProps<{
   group: Group
   entries: Entry[]
+  /** Planned costs; compared against actual spending day by day. */
+  itinerary: ItineraryItem[]
   uid: string
   locale: string
 }>()
@@ -54,7 +58,28 @@ const items = computed(() =>
 )
 const total = computed(() => sumItems(items.value))
 const categories = computed(() => byCategory(items.value))
-const days = computed(() => byDay(items.value))
+/**
+ * Estimates are group-level, so they are only compared with everyone's
+ * spending — splitting a plan per person would be guesswork.
+ */
+const showEstimates = computed(() => !(shared.value && scope.value === 'mine') && totalEstimate(props.itinerary) > 0)
+const estimates = computed(() => estimatesByDay(props.itinerary))
+
+/** The trip's dates, stretched to cover any spending or plans outside them. */
+const range = computed(() => {
+  const dates = [...items.value.map((i) => i.date), ...(showEstimates.value ? estimates.value.keys() : [])]
+  if (hasTripDates(props.group.startDate, props.group.endDate)) dates.push(props.group.startDate, props.group.endDate)
+  if (!dates.length) return undefined
+  dates.sort()
+  return { from: dates[0]!, to: dates[dates.length - 1]! }
+})
+
+const days = computed(() => byDay(items.value, range.value))
+const estimateTotal = computed(() => totalEstimate(props.itinerary))
+/** Actual against plan, e.g. +15 when 15% over. */
+const overPercent = computed(() =>
+  estimateTotal.value ? Math.round(((total.value - estimateTotal.value) / estimateTotal.value) * 100) : 0,
+)
 const activeDays = computed(() => days.value.filter((d) => d.amountMinor !== 0).length)
 
 const currency = computed(() => props.group.currency)
@@ -75,19 +100,34 @@ const categorySeries = computed<ChartSeries[]>(() => [
 ])
 const categoryLabels = computed(() => categories.value.map((c) => t(`category.${c.category}`)))
 
-const accent = computed(() =>
-  getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim() || '#0d9488',
-)
+// Series colours come from the theme tokens; reading `theme` makes them
+// recompute when the user switches between light and dark.
+const { theme } = useTheme()
+function token(name: string, fallback: string): string {
+  void theme.value
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
+}
+const muted = computed(() => token('--c-faint', '#a1a1aa'))
+const accent = computed(() => token('--c-accent', '#0d9488'))
 
 const daySeries = computed<ChartSeries[]>(() => {
-  const values = days.value.map((d) => toMajor(d.amountMinor, currency.value))
-  return [
+  const shape = (values: number[]) => (dayChart.value === 'cumulative' ? cumulative(values) : values)
+  const series: ChartSeries[] = [
     {
       label: t('stats.actual'),
-      data: dayChart.value === 'cumulative' ? cumulative(values) : values,
+      data: shape(days.value.map((d) => toMajor(d.amountMinor, currency.value))),
       color: accent.value,
     },
   ]
+  if (showEstimates.value) {
+    series.push({
+      label: t('stats.estimated'),
+      data: shape(days.value.map((d) => toMajor(estimates.value.get(d.date) ?? 0, currency.value))),
+      color: muted.value,
+      dashed: true,
+    })
+  }
+  return series
 })
 const dayLabels = computed(() => days.value.map((d) => formatShortDay(d.date)))
 
@@ -132,6 +172,12 @@ const DAY_CHARTS = [
         </p>
         <p class="tabular mt-1 text-2xl font-semibold tracking-tight">
           {{ money(total) }} <span class="text-sm font-normal text-muted">{{ currency }}</span>
+        </p>
+        <p v-if="showEstimates" class="tabular mt-1 text-xs text-muted">
+          {{ t('stats.vsEstimate', { amount: money(estimateTotal) }) }}
+          <span :class="overPercent > 0 ? 'text-negative' : 'text-positive'">
+            ({{ overPercent > 0 ? '+' : '' }}{{ overPercent }}%)
+          </span>
         </p>
         <p v-if="activeDays > 1" class="tabular mt-1 text-xs text-faint">
           {{ t('stats.dailyAverage', { amount: money(Math.round(total / days.length)), days: days.length }) }}

@@ -91,6 +91,37 @@ service cloud.firestore {
       allow update: if isMemberEdit() || isValidJoin() || isValidLeave();
 
       allow delete: if isOwner();
+
+      // --- trip plan ---------------------------------------------------------
+      // Planning is collaborative: any member may add, edit or remove any item,
+      // and each write must name its author.
+      match /itinerary/{itemId} {
+        function group() {
+          return get(/databases/$(database)/documents/groups/$(groupId)).data;
+        }
+
+        function isGroupMember() {
+          return signedIn() && request.auth.uid in group().memberIds;
+        }
+
+        function validItem(data) {
+          return data.kind in ['spot', 'flight', 'lodging']
+            && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+            && data.time is string && (data.time == '' || data.time.matches('^[0-9]{2}:[0-9]{2}$'))
+            && data.endDate is string
+            && data.title is string && data.title.size() > 0 && data.title.size() <= 120
+            && data.place is string && data.place.size() <= 200
+            && data.note is string && data.note.size() <= 500
+            && data.estimateMinor is int && data.estimateMinor >= 0
+            && data.category in ['food', 'transport', 'lodging', 'shopping', 'fun', 'other']
+            && data.updatedBy == request.auth.uid;
+        }
+
+        allow read: if isGroupMember();
+        allow create, update: if isGroupMember() && validItem(request.resource.data);
+        // The owner also clears the plan when deleting the whole group.
+        allow delete: if isGroupMember();
+      }
     }
 
     // --- entries -----------------------------------------------------------
@@ -130,7 +161,10 @@ service cloud.firestore {
         && request.resource.data.createdBy == resource.data.createdBy
         && validDetails(request.resource.data);
 
-      allow delete: if resource.data.createdBy == request.auth.uid;
+      // The group owner may also remove entries, which deleting the whole
+      // group requires; otherwise other members' entries would block it.
+      allow delete: if resource.data.createdBy == request.auth.uid
+        || (signedIn() && groupOf(resource.data.groupId).ownerId == request.auth.uid);
     }
   }
 }

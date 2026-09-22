@@ -50,13 +50,20 @@ const detecting = ref(false)
 const saving = ref(false)
 const formError = ref('')
 
-const form = ref({ name: '', currency: 'USD' as CurrencyCode, destination: '', location: '' })
+const form = ref({ name: '', currency: 'USD' as CurrencyCode, destination: '', location: '', startDate: '', endDate: '' })
 const isOwner = computed(() => selected.value?.ownerId === auth.uid)
 
 function openCreate(): void {
   editing.value = null
   formError.value = ''
-  form.value = { name: '', currency: auth.profile?.currency ?? 'USD', destination: '', location: '' }
+  form.value = {
+    name: '',
+    currency: auth.profile?.currency ?? 'USD',
+    destination: '',
+    location: '',
+    startDate: '',
+    endDate: '',
+  }
   formOpen.value = true
 }
 
@@ -70,6 +77,8 @@ function openEdit(): void {
     currency: group.currency,
     destination: group.destination,
     location: group.location,
+    startDate: group.startDate,
+    endDate: group.endDate,
   }
   optionsOpen.value = false
   formOpen.value = true
@@ -116,6 +125,13 @@ async function save(): Promise<void> {
     return
   }
 
+  // Both trip dates or neither; a lone date cannot lay out an itinerary.
+  const { startDate, endDate } = form.value
+  if ((startDate || endDate) && !(startDate && endDate && startDate <= endDate)) {
+    formError.value = t('itinerary.datesInvalid')
+    return
+  }
+
   const profile = auth.profile
   if (!profile) return
 
@@ -126,6 +142,8 @@ async function save(): Promise<void> {
         name,
         destination: form.value.destination,
         location: form.value.location.trim(),
+        startDate,
+        endDate,
       })
       toast.success(t('groups.updated'))
     } else {
@@ -134,6 +152,8 @@ async function save(): Promise<void> {
         currency: form.value.currency,
         destination: form.value.destination,
         location: form.value.location.trim(),
+        startDate,
+        endDate,
         owner: {
           uid: profile.uid,
           member: { nickname: profile.nickname, payment: profile.payment },
@@ -303,6 +323,24 @@ async function leave(): Promise<void> {
             v-model="form.location"
             :placeholder="t('groups.locationPlaceholder')"
           />
+        </AppField>
+
+        <AppField :label="t('groups.tripDates')" :hint="t('groups.tripDatesHint')">
+          <div class="grid grid-cols-2 gap-3">
+            <input
+              v-model="form.startDate"
+              type="date"
+              :aria-label="t('itinerary.startDate')"
+              class="tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
+            />
+            <input
+              v-model="form.endDate"
+              type="date"
+              :min="form.startDate || undefined"
+              :aria-label="t('itinerary.endDate')"
+              class="tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
+            />
+          </div>
         </AppField>
       </div>
 

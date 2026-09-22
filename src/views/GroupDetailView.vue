@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, toRef } from 'vue'
+import { computed, onMounted, ref, toRef, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { HandCoins, Plus, Receipt, UserPlus } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -9,7 +9,9 @@ import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 import EntryRow from '@/components/group/EntryRow.vue'
 import EntrySheet from '@/components/group/EntrySheet.vue'
+import GroupItinerary from '@/components/group/GroupItinerary.vue'
 import GroupStats from '@/components/group/GroupStats.vue'
+import ItinerarySheet from '@/components/group/ItinerarySheet.vue'
 import MemberStrip from '@/components/group/MemberStrip.vue'
 import SettlementSheet from '@/components/group/SettlementSheet.vue'
 import { useGroupDetail } from '@/composables/useGroupDetail'
@@ -17,12 +19,15 @@ import { useConfirm } from '@/composables/useConfirm'
 import { useInvite } from '@/composables/useInvite'
 import { useToast } from '@/composables/useToast'
 import { createEntry, deleteEntry, updateEntry, type EntryDraft } from '@/services/entries'
+import { updateGroup } from '@/services/groups'
+import { createItem, deleteItem, updateItem, type ItineraryDraft } from '@/services/itinerary'
 import { placeLabel } from '@/data/countries'
-import { formatDay } from '@/lib/dates'
+import { formatDay, todayIso } from '@/lib/dates'
+import { defaultTab, hasTripDates, tripPhase } from '@/lib/itinerary'
 import { formatNumber } from '@/lib/money'
 import { useAuthStore } from '@/stores/auth'
 import { useRatesStore } from '@/stores/rates'
-import type { Entry, Transfer } from '@/types/models'
+import type { Entry, EntryCategory, ItineraryItem, ItineraryKind, Transfer } from '@/types/models'
 
 const props = defineProps<{ id: string }>()
 
@@ -33,21 +38,31 @@ const toast = useToast()
 const { invite } = useInvite()
 const { confirm } = useConfirm()
 
-const { group, entries, balances, settlements, total, loading } = useGroupDetail(toRef(props, 'id'))
+const { group, entries, itinerary, balances, settlements, total, loading } = useGroupDetail(toRef(props, 'id'))
 
 const selectedMember = ref('all')
 const entrySheetOpen = ref(false)
 const settleSheetOpen = ref(false)
 const editingEntry = ref<Entry | null>(null)
 const presetSettlement = ref<{ to: string; amountMinor: number } | null>(null)
+const presetExpense = ref<{ title: string; date: string; category: EntryCategory } | null>(null)
 
 onMounted(() => {
   void rates.load()
 })
 
-type GroupTab = 'ledger' | 'stats'
-const TABS: GroupTab[] = ['ledger', 'stats']
+type GroupTab = 'itinerary' | 'ledger' | 'stats'
+const TABS: GroupTab[] = ['itinerary', 'ledger', 'stats']
 const tab = ref<GroupTab>('ledger')
+
+// Pick the opening tab from the trip phase once, when the group first loads;
+// after that the tab only changes when the user taps one.
+let tabChosen = false
+watch(group, (next) => {
+  if (tabChosen || !next) return
+  tabChosen = true
+  tab.value = defaultTab(tripPhase(next.startDate, next.endDate, todayIso()))
+})
 
 /** A group of one has nobody to settle with or filter by. */
 const shared = computed(() => (group.value?.memberIds.length ?? 0) > 1)
@@ -76,20 +91,109 @@ const entryDays = computed(() => {
 function openAdd(): void {
   editingEntry.value = null
   presetSettlement.value = null
+  presetExpense.value = null
   entrySheetOpen.value = true
 }
 
 function openEdit(entry: Entry): void {
   editingEntry.value = entry
   presetSettlement.value = null
+  presetExpense.value = null
   entrySheetOpen.value = true
 }
 
 function recordTransfer(transfer: Transfer): void {
   settleSheetOpen.value = false
   editingEntry.value = null
+  presetExpense.value = null
   presetSettlement.value = { to: transfer.to, amountMinor: transfer.amountMinor }
   entrySheetOpen.value = true
+}
+
+/** "Record" on a plan item: a new expense named after it, on its day. */
+function recordItem(item: ItineraryItem): void {
+  editingEntry.value = null
+  presetSettlement.value = null
+  presetExpense.value = { title: item.title, date: item.date, category: item.category }
+  entrySheetOpen.value = true
+}
+
+// --- itinerary ---------------------------------------------------------------
+
+const itemSheetOpen = ref(false)
+const editingItem = ref<ItineraryItem | null>(null)
+const itemDate = ref(todayIso())
+const itemKind = ref<ItineraryKind>('spot')
+
+/** New items land on today during the trip, otherwise on its first day. */
+function defaultItemDate(): string {
+  const current = group.value
+  if (!current || !hasTripDates(current.startDate, current.endDate)) return todayIso()
+  const today = todayIso()
+  return today >= current.startDate && today <= current.endDate ? today : current.startDate
+}
+
+function openAddItem(date = defaultItemDate(), kind: ItineraryKind = 'spot'): void {
+  editingItem.value = null
+  itemDate.value = date
+  itemKind.value = kind
+  itemSheetOpen.value = true
+}
+
+function openEditItem(item: ItineraryItem): void {
+  editingItem.value = item
+  itemSheetOpen.value = true
+}
+
+async function saveItem(draft: ItineraryDraft): Promise<void> {
+  const current = group.value
+  const uid = auth.uid
+  if (!current || !uid) return
+  try {
+    if (editingItem.value) await updateItem(current.id, editingItem.value.id, draft, uid)
+    else await createItem(current.id, draft, uid)
+    itemSheetOpen.value = false
+    toast.success(t('itinerary.saved'))
+  } catch {
+    toast.error(t('common.somethingWrong'))
+  }
+}
+
+async function removeItem(): Promise<void> {
+  const current = group.value
+  const item = editingItem.value
+  if (!current || !item) return
+  const confirmed = await confirm({
+    title: t('itinerary.deleteTitle', { name: item.title }),
+    message: t('itinerary.deleteMessage'),
+    confirmLabel: t('common.delete'),
+    tone: 'danger',
+  })
+  if (!confirmed) return
+  try {
+    await deleteItem(current.id, item.id)
+    itemSheetOpen.value = false
+    toast.success(t('itinerary.deleted'))
+  } catch {
+    toast.error(t('common.somethingWrong'))
+  }
+}
+
+async function setTripDates(startDate: string, endDate: string): Promise<void> {
+  const current = group.value
+  if (!current) return
+  try {
+    await updateGroup(current.id, { startDate, endDate })
+    toast.success(t('groups.updated'))
+  } catch {
+    toast.error(t('common.somethingWrong'))
+  }
+}
+
+/** The floating button adds whatever the current tab is about. */
+function onFab(): void {
+  if (tab.value === 'itinerary') openAddItem()
+  else openAdd()
 }
 
 async function save(draft: EntryDraft): Promise<void> {
@@ -168,8 +272,20 @@ function copyInvite(): void {
         v-if="tab === 'stats'"
         :group="group"
         :entries="entries"
+        :itinerary="itinerary"
         :uid="auth.uid ?? ''"
         :locale="locale"
+      />
+
+      <GroupItinerary
+        v-else-if="tab === 'itinerary'"
+        :group="group"
+        :items="itinerary"
+        :locale="locale"
+        @add="openAddItem"
+        @edit="openEditItem"
+        @record="recordItem"
+        @set-dates="setTripDates"
       />
 
       <template v-else>
@@ -251,8 +367,8 @@ function copyInvite(): void {
 
       <button
         class="fixed bottom-6 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
-        :aria-label="$t('group.addExpense')"
-        @click="openAdd"
+        :aria-label="tab === 'itinerary' ? $t('itinerary.addSpot') : $t('group.addExpense')"
+        @click="onFab"
       >
         <Plus class="size-6" />
       </button>
@@ -263,6 +379,7 @@ function copyInvite(): void {
         :uid="auth.uid ?? ''"
         :entry="editingEntry"
         :preset-settlement="presetSettlement"
+        :preset-expense="presetExpense"
         :locale="locale"
         @close="entrySheetOpen = false"
         @save="save"
@@ -277,6 +394,17 @@ function copyInvite(): void {
         :locale="locale"
         @close="settleSheetOpen = false"
         @record="recordTransfer"
+      />
+
+      <ItinerarySheet
+        :open="itemSheetOpen"
+        :group="group"
+        :item="editingItem"
+        :preset-date="itemDate"
+        :preset-kind="itemKind"
+        @close="itemSheetOpen = false"
+        @save="saveItem"
+        @remove="removeItem"
       />
     </template>
   </AppShell>

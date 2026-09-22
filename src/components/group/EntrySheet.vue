@@ -27,6 +27,8 @@ const props = defineProps<{
   entry: Entry | null
   /** Pre-selects the settlement tab and recipient from a settlement plan. */
   presetSettlement: { to: string; amountMinor: number } | null
+  /** Pre-fills a new expense, e.g. from an itinerary item's "record" shortcut. */
+  presetExpense?: { title: string; date: string; category: EntryCategory } | null
   locale: string
 }>()
 
@@ -215,6 +217,15 @@ watch(
       recipient.value = null
       amount.value = ''
       participants.value = [...props.group.memberIds]
+
+      const expense = props.presetExpense
+      if (expense) {
+        // The preset's category wins over the title guess.
+        categoryTouched.value = true
+        category.value = expense.category
+        title.value = expense.title
+        date.value = expense.date
+      }
     }
   },
 )

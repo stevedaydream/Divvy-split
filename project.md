@@ -49,7 +49,7 @@ view 不得直接 import `firebase/firestore`。
 | `/join?g=&c=` | JoinView | 邀請連結入口，驗證 inviteCode 後加入群組 |
 | `/onboarding` | OnboardingView | 暱稱、主要幣別、收款資訊 |
 | `/groups` | GroupsView | 群組列表（底部導航第 1 格） |
-| `/groups/:id` | GroupDetailView | 分頁：帳本（依日期分段）／統計；一人群組隱藏結算與成員列 |
+| `/groups/:id` | GroupDetailView | 分頁：行程／帳本（依日期分段）／統計，預設分頁依旅行階段（`defaultTab`）；一人群組隱藏結算與成員列 |
 | `/calculator` | CalculatorView | 匯率換算計算機（第 2 格）；定位鈕把基準換成所在地幣別，主要幣別固定排第一 |
 | `/profile` | ProfileView | 個人檔案、語言、外觀、登出（第 3 格） |
 
@@ -58,7 +58,7 @@ view 不得直接 import `firebase/firestore`。
 
 ## 4. 資料模型
 
-三個 collection：`users` / `groups` / `entries`。
+三個 collection：`users` / `groups` / `entries`，加上子集合 `groups/{id}/itinerary`。
 
 - **金額一律為「最小單位整數」**（`amountMinor`），不使用浮點數累加。
   小數位數由 `data/currencies.ts` 決定（JPY/KRW 為 0，KWD 為 3）。
@@ -82,6 +82,12 @@ view 不得直接 import `firebase/firestore`。
   `Entry.note` 只給「其他」用；`Entry.date` 為 `YYYY-MM-DD` 字串（`lib/dates.ts`，不含時區）。
   舊帳目缺欄位時分類視為 `other`、日期取 `createdAt`。查詢仍依 `createdAt`，排序在 client 端做
   （`compareEntries`：日期新→舊，同日依建立時間）。
+
+- **行程**：`Group.startDate/endDate`（選填，`YYYY-MM-DD`）決定行程天數。每個行程項目
+  （`ItineraryItem`：景點／交通／住宿）是一份文件，全員可編輯，記錄 `updatedBy`。
+  `estimateMinor` 是群組幣別的預估花費，統計分頁以天對照實際（僅「全體」）。
+  排版邏輯在 `lib/itinerary.ts`（`layoutDays` 會把旅行日期外的項目另外列出）。
+  刪除群組時一併刪除行程；規則允許群組擁有者刪除他人帳目，否則刪群組會失敗。
 
 詳見 `src/types/models.ts`。
 

@@ -37,6 +37,9 @@ export interface Group {
   destination: string
   /** Free-text city or area within the destination, e.g. "Tokyo". */
   location: string
+  /** Trip dates as `YYYY-MM-DD`, or empty for groups that are not trips. */
+  startDate: string
+  endDate: string
   ownerId: string
   /** Kept flat so Firestore can query it with `array-contains`. */
   memberIds: string[]
@@ -88,6 +91,33 @@ export interface Entry {
   date: string
   createdAt: Timestamp | null
   createdBy: string
+}
+
+export type ItineraryKind = 'spot' | 'flight' | 'lodging'
+
+/**
+ * One line of a trip plan, stored at `groups/{groupId}/itinerary/{id}`.
+ * Every member may edit any item, so each records who touched it last.
+ */
+export interface ItineraryItem {
+  id: string
+  kind: ItineraryKind
+  /** Day it happens (check-in day for lodging), `YYYY-MM-DD`. */
+  date: string
+  /** `HH:MM`, or empty for all-day. */
+  time: string
+  /** Lodging check-out day; empty otherwise. */
+  endDate: string
+  title: string
+  /** What to search on the map; falls back to the title. */
+  place: string
+  note: string
+  /** Planned cost in the group currency's minor unit; 0 when unknown. */
+  estimateMinor: number
+  /** Preselected when recording an actual expense from this item. */
+  category: EntryCategory
+  updatedBy: string
+  updatedAt: Timestamp | null
 }
 
 /** A `from -> to` transfer proposed by the settlement planner. */

@@ -16,6 +16,8 @@ function toGroup(id: string, data: Record<string, unknown>): Group {
     currency: (data.currency as string) ?? 'USD',
     destination: (data.destination as string) ?? '',
     location: (data.location as string) ?? '',
+    startDate: (data.startDate as string) ?? '',
+    endDate: (data.endDate as string) ?? '',
     ownerId: (data.ownerId as string) ?? '',
     memberIds: (data.memberIds as string[]) ?? [],
     members: (data.members as Record<string, GroupMember>) ?? {},
@@ -57,6 +59,8 @@ export interface CreateGroupInput {
   currency: CurrencyCode
   destination: string
   location: string
+  startDate: string
+  endDate: string
   owner: { uid: string; member: GroupMember }
 }
 
@@ -66,6 +70,8 @@ export async function createGroup(input: CreateGroupInput): Promise<string> {
     currency: input.currency,
     destination: input.destination,
     location: input.location,
+    startDate: input.startDate,
+    endDate: input.endDate,
     ownerId: input.owner.uid,
     memberIds: [input.owner.uid],
     members: { [input.owner.uid]: input.owner.member },
@@ -80,7 +86,7 @@ export async function createGroup(input: CreateGroupInput): Promise<string> {
 /** The group currency is immutable once entries exist, so it is not editable. */
 export async function updateGroup(
   groupId: string,
-  patch: Pick<Partial<Group>, 'name' | 'destination' | 'location' | 'archived'>,
+  patch: Pick<Partial<Group>, 'name' | 'destination' | 'location' | 'startDate' | 'endDate' | 'archived'>,
 ): Promise<void> {
   await updateDoc(doc(db, COLLECTION, groupId), { ...patch, updatedAt: serverTimestamp() })
 }
@@ -144,10 +150,13 @@ export async function leaveGroup(groupId: string, uid: string): Promise<void> {
 
 /** Removes the group and every entry filed against it. Owner only. */
 export async function deleteGroup(groupId: string): Promise<void> {
-  const entries = await getDocs(query(collection(db, 'entries'), where('groupId', '==', groupId)))
+  const [entries, itinerary] = await Promise.all([
+    getDocs(query(collection(db, 'entries'), where('groupId', '==', groupId))),
+    getDocs(collection(db, COLLECTION, groupId, 'itinerary')),
+  ])
 
   // A batch caps at 500 writes, so large ledgers are committed in chunks.
-  const refs = entries.docs.map((d) => d.ref)
+  const refs = [...entries.docs, ...itinerary.docs].map((d) => d.ref)
   for (let i = 0; i < refs.length; i += 400) {
     const batch = writeBatch(db)
     refs.slice(i, i + 400).forEach((ref) => batch.delete(ref))
