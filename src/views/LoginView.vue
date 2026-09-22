@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppButton from '@/components/ui/AppButton.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
 
@@ -29,8 +30,8 @@ async function signIn(): Promise<void> {
 </script>
 
 <template>
-  <main class="grid min-h-dvh place-items-center px-6">
-    <div class="w-full max-w-xs text-center">
+  <main class="flex min-h-dvh flex-col px-6">
+    <div class="mx-auto my-auto w-full max-w-xs pt-12 text-center">
       <div class="mx-auto grid size-14 place-items-center rounded-2xl bg-accent text-accent-fg">
         <span class="text-2xl font-semibold">D</span>
       </div>
@@ -52,5 +53,6 @@ async function signIn(): Promise<void> {
 
       <p class="mt-6 text-xs leading-relaxed text-faint">{{ t('login.secure') }}</p>
     </div>
+    <AppFooter />
   </main>
 </template>

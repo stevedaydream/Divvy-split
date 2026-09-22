@@ -12,7 +12,7 @@ export default {
   login: {
     tagline: '跨幣別的群組分帳，簡單記一筆。',
     signIn: '使用 Google 繼續',
-    secure: '資料保存在你的 Google 帳號中',
+    secure: '資料存放在 Google Firebase，只有你和群組成員看得到。',
     failed: '登入失敗，請再試一次。',
   },
 
@@ -325,6 +325,8 @@ export default {
     added: '已加入行李 {packing} 項、待辦 {todos} 項。',
     empty: '沒有找到新的項目，可能都已經在清單裡了。',
   },
+
+  footer: { privacy: '隱私權政策', reportBug: '回報問題', rights: '保留所有權利。' },
 
   country: {
     search: '搜尋國家',

@@ -12,10 +12,11 @@ service cloud.firestore {
     }
 
     // --- users -------------------------------------------------------------
-    // A profile is readable by any signed-in user: group members need to see
-    // each other's nickname and payment details to settle up.
+    // A profile (email, bank account, LINE ID) is readable only by its owner.
+    // Group members see nickname and payment details through the copy
+    // denormalised into each group document, never through this one.
     match /users/{uid} {
-      allow read: if signedIn();
+      allow read: if isSelf(uid);
       allow create, update: if isSelf(uid);
       allow delete: if isSelf(uid);
 

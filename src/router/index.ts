@@ -6,6 +6,8 @@ const router = createRouter({
   routes: [
     { path: '/', name: 'login', component: () => import('@/views/LoginView.vue'), meta: { public: true } },
     { path: '/join', name: 'join', component: () => import('@/views/JoinView.vue'), meta: { public: true } },
+    // Readable by anyone, signed in or not, with or without a profile.
+    { path: '/privacy', name: 'privacy', component: () => import('@/views/PrivacyView.vue'), meta: { public: true, open: true } },
     { path: '/onboarding', name: 'onboarding', component: () => import('@/views/OnboardingView.vue') },
     { path: '/groups', name: 'groups', component: () => import('@/views/GroupsView.vue') },
     { path: '/groups/:id', name: 'group', component: () => import('@/views/GroupDetailView.vue'), props: true },
@@ -22,6 +24,8 @@ const router = createRouter({
  * document on every single navigation.
  */
 router.beforeEach(async (to) => {
+  if (to.meta.open) return true
+
   const auth = useAuthStore()
   await auth.init()
 

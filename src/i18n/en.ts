@@ -12,7 +12,7 @@ export default {
   login: {
     tagline: 'Split group expenses, in any currency.',
     signIn: 'Continue with Google',
-    secure: 'Your data stays in your Google account',
+    secure: 'Stored on Google Firebase, visible only to you and your groups.',
     failed: 'Sign-in failed. Please try again.',
   },
 
@@ -325,6 +325,8 @@ export default {
     added: 'Added {packing} to packing and {todos} to to-dos.',
     empty: 'No new items found — they may already be on your lists.',
   },
+
+  footer: { privacy: 'Privacy policy', reportBug: 'Report a bug', rights: 'All rights reserved.' },
 
   country: {
     search: 'Search country',

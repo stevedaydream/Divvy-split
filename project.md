@@ -21,7 +21,7 @@
 ```
 src/
 ├── types/        models.ts（UserProfile / Group / Entry / ItineraryItem / Invitation / ChecklistItem）· currency.ts
-├── lib/          firebase · money · settlement · stats · itinerary · dates · calc · geo · line
+├── lib/          appInfo（作者、版本、bug 回報連結）· firebase · money · settlement · stats · itinerary · dates · calc · geo · line
 │                 ai（提示詞＋回應驗證）· gemini（API 呼叫＋裝置端 Key＋額度重置時間）· aiFallback · entryQr · random
 ├── data/         currencies · countries · categories
 ├── services/     users · groups · entries · itinerary · invitations · checklists   ← 唯一碰 Firestore 的一層
@@ -31,7 +31,7 @@ src/
 ├── components/
 │   ├── ui/       AppButton · AppSheet · AppDialog · AppInput · AppField
 │   │             AppAvatar · AppSkeleton · AppEmptyState · ToastHost
-│   ├── layout/   AppShell · TopBar · BottomNav
+│   ├── layout/   AppShell · TopBar · BottomNav · AppFooter（隱私權政策、回報問題、著作權、版本）
 │   ├── ai/       AiKeySetup · AiStatus（兩個 AI 畫面共用）
 │   ├── charts/   ChartCanvas（Chart.js，lazy load）
 │   ├── currency/ CurrencyPicker · CountryPicker · AmountInput
@@ -53,6 +53,7 @@ view 不得直接 import `firebase/firestore`。
 |---|---|---|
 | `/` | LoginView | Google 登入，`?next=` 保留原本要去的頁 |
 | `/join?g=&c=` | JoinView | 邀請連結入口，驗證 inviteCode 後加入群組 |
+| `/privacy` | PrivacyView | 隱私權政策（`meta.open`：未登入、未建檔也能看）；內容須與程式和 firestore.rules 一致 |
 | `/onboarding` | OnboardingView | 暱稱、主要幣別、收款資訊 |
 | `/groups` | GroupsView | 群組列表（底部導航第 1 格） |
 | `/groups/:id` | GroupDetailView | 分頁：行程／帳本（依日期分段）／統計／工具，預設分頁依旅行階段（`defaultTab`）；一人群組隱藏結算與成員列 |
@@ -131,6 +132,7 @@ Chart.js 以 dynamic import 載入；`vite.config.ts` 的 manualChunks 刻意不
 
 `firestore.rules`：
 
+- `users` 只有本人可讀；群組成員透過群組文件內的反正規化副本看到暱稱與收款資訊。
 - `groups` 僅成員可讀 → 非成員拿不到 `inviteCode`。
 - 加入群組需在寫入中附帶 `joinCode`，規則比對 `resource.data.inviteCode`，
   且只允許把自己加進 `memberIds`，其餘欄位不得變動。

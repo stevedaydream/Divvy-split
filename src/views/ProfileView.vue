@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { Eye, EyeOff, LogOut, Pencil, UsersRound } from 'lucide-vue-next'
 import AppShell from '@/components/layout/AppShell.vue'
 import TopBar from '@/components/layout/TopBar.vue'
+import AppFooter from '@/components/layout/AppFooter.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
 import CurrencyPicker from '@/components/currency/CurrencyPicker.vue'
@@ -193,5 +194,6 @@ async function signOut(): Promise<void> {
       @close="pickerOpen = false"
       @select="changeCurrency"
     />
+    <AppFooter />
   </AppShell>
 </template>
