@@ -33,6 +33,8 @@ import { createItem, updateItem } from '@/services/itinerary'
 import { createTripFromRecord, finishTrip, reopenTrip } from '@/services/tripRecords'
 import { applyPackingTemplate, savePackingTemplate } from '@/services/packingTemplates'
 import { setGroupHidden } from '@/services/groupPreferences'
+import { publishPhotoIndex, listSharedPhotos, editSharedPhoto, deleteSharedPhoto, photoExpiryReminders } from '@/services/sharedPhotos'
+import type { SharedPhoto } from '@/types/photos'
 import type { TripRecord, UserProfile } from '@/types/models'
 
 describe.skipIf(process.env.DIVVY_EMULATOR_TEST !== '1')('旅行收尾與個人資料整合（本機模擬器）', () => {
@@ -154,6 +156,32 @@ describe.skipIf(process.env.DIVVY_EMULATOR_TEST !== '1')('旅行收尾與個人�
     await login(1)
     await expect(getDocs(collection(db, 'users', a, 'packingTemplates'))).rejects.toMatchObject({ code: 'permission-denied' })
     await login(0)
+  })
+
+  it('封存後可分享照片，索引與計數不可偽造，成員刪除依上傳者及建立者權限', async () => {
+    const photo: SharedPhoto = { id: 'synthetic-photo-a', groupId, groupName: '測試旅行', tripStart: '2026-10-01', name: 'photo.jpg', mimeType: 'image/jpeg', size: 3,
+      date: '2026-10-02', itineraryId: '', itineraryTitle: '', quality: 'original', uploaderId: a, uploaderName: 'A', createdAt: Date.now(), driveFileId: 'synthetic-drive-file', expiresAt: Date.now() + 29 * 86400000, deleted: false }
+    await publishPhotoIndex(groupId, photo)
+    await publishPhotoIndex(groupId, photo)
+    expect((await getDoc(doc(db, 'groups', groupId, 'photoCounters', 'total'))).data()?.count).toBe(1)
+    expect((await listSharedPhotos(groupId)).photos).toHaveLength(1)
+    await expect(setDoc(doc(db, 'groups', groupId, 'photos', 'bypass'), { ...photo, id: 'bypass' })).rejects.toMatchObject({ code: 'permission-denied' })
+    await expect(updateDoc(doc(db, 'groups', groupId, 'photoCounters', 'total'), { count: 0 })).rejects.toMatchObject({ code: 'permission-denied' })
+    await expect(getDocs(collection(peerDb, 'groups', groupId, 'photos'))).rejects.toMatchObject({ code: 'permission-denied' })
+    await login(1)
+    expect((await listSharedPhotos(groupId)).photos).toHaveLength(1)
+    await expect(editSharedPhoto(photo, { date: '2026-10-03', itineraryId: '', itineraryTitle: '' })).rejects.toMatchObject({ code: 'permission-denied' })
+    await expect(deleteSharedPhoto(photo)).rejects.toMatchObject({ code: 'permission-denied' })
+    const byB = { ...photo, id: 'synthetic-photo-b', uploaderId: b, uploaderName: 'B', expiresAt: Date.now() + 86400000 }
+    await publishPhotoIndex(groupId, byB)
+    expect((await photoExpiryReminders(groupId)).map((item) => item.id)).toContain(byB.id)
+    await login(0)
+    await editSharedPhoto(byB, { date: '2026-10-03', itineraryId: '', itineraryTitle: '' })
+    await expect(updateDoc(doc(db, 'groups', groupId, 'photos', byB.id), { expiresAt: Date.now() + 31 * 86400000 })).rejects.toMatchObject({ code: 'permission-denied' })
+    await deleteSharedPhoto(byB)
+    expect((await listSharedPhotos(groupId)).photos.map((item) => item.id)).not.toContain(byB.id)
+    await expect(updateDoc(doc(db, 'groups', groupId, 'photos', byB.id), { deleted: false })).rejects.toMatchObject({ code: 'permission-denied' })
+    await expect(setDoc(doc(db, 'groups', groupId, 'photoMembers', b), { email: email(0) })).rejects.toMatchObject({ code: 'permission-denied' })
   })
 
   it('隱藏與刪除群組均不更動已保存的個人副本', async () => {

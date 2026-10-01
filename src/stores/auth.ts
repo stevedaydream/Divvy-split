@@ -7,6 +7,7 @@ import { isStandalone } from '@/lib/browserEnv'
 import { auth, googleProvider } from '@/lib/firebase'
 import { fetchProfile, saveProfile } from '@/services/users'
 import { syncMemberProfile } from '@/services/groups'
+import { acceptDriveRedirect } from '@/services/photoDrive'
 import type { UserProfile } from '@/types/models'
 
 /**
@@ -34,7 +35,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     // Surfaces a failed redirect sign-in; a successful one is picked up by
     // onAuthStateChanged like any other session.
-    getRedirectResult(auth).catch((error: { code?: string }) => {
+    getRedirectResult(auth).then(acceptDriveRedirect).catch((error: { code?: string }) => {
       redirectError.value = error.code ?? 'unknown'
     })
 

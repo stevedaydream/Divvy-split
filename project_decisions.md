@@ -210,3 +210,17 @@ JPY／KRW 這類無小數幣別會顯示成 `12000.00`。
 **前提**：Firebase AI Logic 強制 App Check，需設定 reCAPTCHA Enterprise site key
 （`VITE_RECAPTCHA_ENTERPRISE_SITE_KEY`）。未設定時備援自動停用，只顯示恢復時間。
 `firebase/ai` 與 `firebase/app-check` 只在需要備援時載入（vite manualChunks 刻意排除）。
+
+---
+
+## D19. 免費照片方案：本機相簿＋個人 Drive，Firebase 只存索引
+
+**決定**：依使用者選擇免費方案，照片原檔保存在裝置 IndexedDB 與各自 Google Drive；不使用 Firebase Storage、Cloud Functions 或 Firestore TTL。Firestore 僅保存團內照片資料、成員主動提供的 Google email 及累計計數。每團累計 500 張，查詢分頁並限制提醒與同步頻率；此限制降低操作量，並非整個專案免費額度的保證。
+
+**原因**：Firebase Storage 已要求 Blaze 計費方案，不能符合使用者不開啟計費的要求。Drive 使用 `drive.file`，只讀寫 App 建立或使用者透過 Picker 選取的檔案，不取得整個雲端硬碟權限。
+
+**保存與清理**：私人備份是每張照片加上分類資料的 ZIP，共享原檔與縮圖為獨立副本；共享期限 30 天，App 到期即隱藏，7 天內提示保存。沒有後端排程，無法保證到期當下實體刪檔；上傳者下次連接時刪除共享副本。私人備份不跟隨期限或揪團刪除。
+
+**代價**：每人需 Google 授權及可用 Drive 空間；新同行者需提供 Google email，上傳者連接時同步權限，同行者還需 Picker 選取檔案授權讀取。自動備份僅在 App 前景與授權有效時執行；45 分鐘後需重新連接，不保存 refresh token。HEIC 預覽取決於裝置；本機資料需 ZIP 或 Drive 防止清除網站資料後遺失。
+
+**上線條件**：既有 Google Cloud 專案啟用 Drive API／Google Picker API、OAuth 同意與 API Key 限制配置完成，實測正式帳號及跨帳號分享。前端與相配 Firestore 規則需一併部署。現階段已完成模擬測試及本機 UI 驗證，尚未部署。

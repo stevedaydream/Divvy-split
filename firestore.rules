@@ -169,6 +169,76 @@ service cloud.firestore {
 
       allow delete: if isOwner();
 
+      // 照片檔案存於使用者 Drive，Firestore 只保存有上限的索引與授權聯絡資訊。
+      match /photoMembers/{uid} {
+        allow read: if signedIn() && request.auth.uid in groupData(groupId).memberIds;
+        allow create, update: if isSelf(uid) && request.auth.uid in groupData(groupId).memberIds
+          && !groupData(groupId).get('deleting', false)
+          && request.auth.token.email_verified == true
+          && request.resource.data.keys().hasOnly(['email'])
+          && request.resource.data.email == request.auth.token.email;
+        allow delete: if isSelf(uid) || (signedIn() && groupData(groupId).ownerId == request.auth.uid && groupData(groupId).get('deleting', false));
+      }
+
+      match /photoCounters/{counterId} {
+        function validCounter() {
+          let data = request.resource.data;
+          let photo = getAfter(/databases/$(database)/documents/groups/$(groupId)/photos/$(data.lastId)).data;
+          return counterId == 'total' && signedIn() && request.auth.uid in groupData(groupId).memberIds
+            && !groupData(groupId).get('deleting', false)
+            && data.keys().hasOnly(['count', 'lastId'])
+            && data.count is int && data.count > 0 && data.count <= 500
+            && data.lastId is string && data.lastId.matches('^[a-zA-Z0-9_-]{1,100}$')
+            && !exists(/databases/$(database)/documents/groups/$(groupId)/photos/$(data.lastId))
+            && photo.uploaderId == request.auth.uid;
+        }
+        allow read: if signedIn() && request.auth.uid in groupData(groupId).memberIds;
+        allow create: if validCounter() && request.resource.data.count == 1;
+        allow update: if validCounter() && request.resource.data.count == resource.data.count + 1;
+        allow delete: if signedIn() && groupData(groupId).ownerId == request.auth.uid && groupData(groupId).get('deleting', false);
+      }
+
+      match /photos/{photoId} {
+        function photoMember() { return signedIn() && request.auth.uid in groupData(groupId).memberIds; }
+        function photoManager() { return photoMember() && (resource.data.uploaderId == request.auth.uid || groupData(groupId).ownerId == request.auth.uid); }
+        function validPhoto(data) {
+          return data.keys().hasOnly(['id', 'groupId', 'groupName', 'tripStart', 'name', 'mimeType', 'size', 'date', 'itineraryId', 'itineraryTitle', 'quality', 'uploaderId', 'uploaderName', 'createdAt', 'driveFileId', 'thumbnailId', 'expiresAt', 'deleted', 'indexedAt'])
+            && data.id == photoId && photoId.matches('^[a-zA-Z0-9_-]{1,100}$') && data.groupId == groupId
+            && data.groupName is string && data.groupName.size() > 0 && data.groupName.size() <= 200
+            && data.tripStart is string && data.tripStart.size() <= 10
+            && data.name is string && data.name.size() > 0 && data.name.size() <= 200
+            && data.mimeType in ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif', 'image/avif']
+            && data.size is int && data.size > 0 && data.size <= 26214400
+            && data.date is string && data.date.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+            && data.itineraryId is string && data.itineraryId.size() <= 200
+            && data.itineraryTitle is string && data.itineraryTitle.size() <= 200
+            && data.quality in ['standard', 'original'] && data.uploaderId is string
+            && data.uploaderName is string && data.uploaderName.size() <= 200
+            && data.createdAt is int && data.createdAt > 0
+            && data.driveFileId is string && data.driveFileId.matches('^[a-zA-Z0-9_-]{1,200}$')
+            && data.get('thumbnailId', '') is string && data.get('thumbnailId', '').size() <= 200
+            && data.expiresAt is int && data.deleted is bool && data.indexedAt is timestamp;
+        }
+        allow read: if photoMember();
+        allow create: if photoMember() && !groupData(groupId).get('deleting', false)
+          && validPhoto(request.resource.data) && request.resource.data.uploaderId == request.auth.uid
+          && request.resource.data.deleted == false && request.resource.data.indexedAt == request.time
+          && (request.resource.data.itineraryId == '' || exists(/databases/$(database)/documents/groups/$(groupId)/itinerary/$(request.resource.data.itineraryId)))
+          && request.resource.data.expiresAt > request.time.toMillis()
+          && request.resource.data.expiresAt <= request.time.toMillis() + 2592000000
+          && getAfter(/databases/$(database)/documents/groups/$(groupId)/photoCounters/total).data.lastId == photoId
+          && getAfter(/databases/$(database)/documents/groups/$(groupId)/photoCounters/total).data.count
+            == (exists(/databases/$(database)/documents/groups/$(groupId)/photoCounters/total)
+              ? get(/databases/$(database)/documents/groups/$(groupId)/photoCounters/total).data.count + 1 : 1);
+        allow update: if photoManager() && !groupData(groupId).get('deleting', false)
+          && validPhoto(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['date', 'itineraryId', 'itineraryTitle', 'deleted'])
+          && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['itineraryId']) || request.resource.data.itineraryId == ''
+            || exists(/databases/$(database)/documents/groups/$(groupId)/itinerary/$(request.resource.data.itineraryId)))
+          && (resource.data.deleted == false || request.resource.data.deleted == true);
+        allow delete: if signedIn() && groupData(groupId).ownerId == request.auth.uid && groupData(groupId).get('deleting', false);
+      }
+
       // --- trip plan ---------------------------------------------------------
       // Planning is collaborative: any member may add, edit or remove any item,
       // and each write must name its author.

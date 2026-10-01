@@ -14,7 +14,8 @@
 - 開始工作先讀 `project.md`；分層為 view → composable／store → service → Firestore。
 - view 不得直接 import `firebase/firestore`。
 - 金額使用最小單位整數；個人統計與結算共用 `expenseShares`。
-- 帳目與行程修改須透過 service 交易更新群組版本；封存群組禁止修改共享內容。
+- 帳目與行程修改須透過 service 交易更新群組版本；封存群組禁止修改帳本、行程與共同待辦，照片仍可補傳。
+- 照片原檔只存裝置 IndexedDB／使用者 Drive；不啟用 Firebase Storage、Functions 或付費 TTL。
 - 群組隱藏不移除成員，避免改變歷史分帳；行李範本與旅行副本只允許本人存取。
 - 不能只部署前端而漏掉相配的 Firestore 規則；明細上限與規則需同步（B8）。
 

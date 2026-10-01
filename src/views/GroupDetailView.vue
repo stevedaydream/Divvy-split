@@ -14,6 +14,7 @@ import AiGuideSheet from '@/components/group/AiGuideSheet.vue'
 import GroupItinerary from '@/components/group/GroupItinerary.vue'
 import GroupStats from '@/components/group/GroupStats.vue'
 import GroupTools from '@/components/group/GroupTools.vue'
+import PhotoAlbum from '@/components/photos/PhotoAlbum.vue'
 import InviteSheet from '@/components/group/InviteSheet.vue'
 import ItinerarySheet from '@/components/group/ItinerarySheet.vue'
 import MemberStrip from '@/components/group/MemberStrip.vue'
@@ -59,9 +60,11 @@ onMounted(() => {
   void rates.load()
 })
 
-type GroupTab = 'itinerary' | 'ledger' | 'stats' | 'tools'
-const TABS: GroupTab[] = ['itinerary', 'ledger', 'stats', 'tools']
+type GroupTab = 'itinerary' | 'ledger' | 'stats' | 'tools' | 'photos'
+const TABS: GroupTab[] = ['itinerary', 'ledger', 'stats', 'tools', 'photos']
 const tab = ref<GroupTab>('ledger')
+const photoItinerary = ref('')
+function openItemPhotos(item: ItineraryItem): void { photoItinerary.value = item.id; tab.value = 'photos' }
 
 // Pick the opening tab from the trip phase once, when the group first loads;
 // after that the tab only changes when the user taps one.
@@ -70,6 +73,7 @@ watch(group, (next) => {
   if (tabChosen || !next) return
   tabChosen = true
   tab.value = defaultTab(tripPhase(next.startDate, next.endDate, todayIso()))
+  if (route.query.tab === 'photos') tab.value = 'photos'
   if (route.query.close === '1') closeSheetOpen.value = true
 })
 watch(() => group.value?.archived, (archived) => {
@@ -287,7 +291,7 @@ function copyInvite(): void {
             class="relative flex-1 py-2.5 text-sm font-medium transition-colors"
             :class="tab === option ? 'text-fg' : 'text-muted hover:text-fg'"
             :aria-selected="tab === option"
-            @click="tab = option"
+            @click="tab = option; photoItinerary = ''"
           >
             {{ $t(`group.tabs.${option}`) }}
             <span
@@ -326,6 +330,11 @@ function copyInvite(): void {
 
       <GroupTools v-else-if="tab === 'tools'" :group="group" :uid="auth.uid ?? ''" />
 
+      <template v-else-if="tab === 'photos'">
+        <button v-if="photoItinerary" type="button" class="px-4 pt-3 text-xs text-accent" @click="photoItinerary = ''">{{ t('photos.showAll') }}</button>
+        <PhotoAlbum :group="group" :itinerary="itinerary" :itinerary-filter="photoItinerary" />
+      </template>
+
       <GroupItinerary
         v-else-if="tab === 'itinerary'"
         :group="group"
@@ -334,6 +343,7 @@ function copyInvite(): void {
         @add="openAddItem"
         @edit="openEditItem"
         @record="recordItem"
+        @photos="openItemPhotos"
         @set-dates="setTripDates"
         @ai="aiSheetOpen = true"
       />
@@ -417,7 +427,7 @@ function copyInvite(): void {
       </template>
 
       <button
-        v-if="tab !== 'tools' && !group.archived"
+        v-if="tab !== 'tools' && tab !== 'photos' && !group.archived"
         class="fixed bottom-6 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
         :aria-label="tab === 'itinerary' ? $t('itinerary.addSpot') : $t('group.addExpense')"
         @click="onFab"

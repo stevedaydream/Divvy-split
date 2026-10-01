@@ -32,6 +32,7 @@ const zh: { title: string; intro: string; sections: Section[] } = {
         '群組資料：群組名稱、目的地、旅行日期、成員，以及帳目、行程、共同待辦等你和成員輸入的內容。',
         '行李清單與範本：你自己的清單項目，以及你命名保存的範本文字。',
         '個人旅行紀錄：你保存的目的地、旅行日期與行程副本，不包含群組成員的收款資料。',
+        '照片相簿：檔名、拍攝日期、揪團分類、行程連結、上傳者及 Drive 檔案索引。照片檔案保存於本機及你授權的 Google Drive，不存入 Firebase。',
       ],
     },
     {
@@ -42,6 +43,7 @@ const zh: { title: string; intro: string; sections: Section[] } = {
         '群組的帳目、行程與共同待辦：該群組的所有成員。',
         '行李清單、行李範本、旅行紀錄與群組隱藏設定：只有你自己。',
         '邀請：寄件人與收件人看得到邀請內容（群組名稱與寄件人暱稱）。',
+        '連接揪團照片分享後，你的 Google email 會提供給該揪團成員，以設定 Drive 私密分享。共享照片僅授權指定帳號，不建立公開連結。',
       ],
     },
     {
@@ -56,6 +58,7 @@ const zh: { title: string; intro: string; sections: Section[] } = {
     {
       title: '第三方服務',
       items: [
+        'Google Drive：選用連接，只取得 App 建立或你選取的檔案權限。App 開啟且有網路與有效授權時，會自動備份本機照片及分類資料；OAuth token 只保留在目前記憶體，不寫入 Firestore 或備份。',
         'Google Firebase：登入（Firebase Authentication）、資料庫（Cloud Firestore）、網站代管（Firebase Hosting），資料存放在 Google 的伺服器上。',
         'Firebase App Check 與 reCAPTCHA Enterprise：用來防止濫用 AI 功能，Google 會蒐集裝置與互動訊號判斷是否為真人。',
         'Google Gemini：只在你使用 AI 導遊或 AI 整理清單時，才會把旅行資訊、目前的行程、你貼上的文字或上傳的截圖送給 Google 處理。使用你自己的 API Key 時適用 Gemini API 條款；免費方案的內容可能被 Google 用來改善服務。你的額度用盡時，該次請求會改由 Divvy 的 Firebase AI Logic 處理。',
@@ -71,6 +74,7 @@ const zh: { title: string; intro: string; sections: Section[] } = {
     {
       title: '保存與刪除',
       body: [
+        '照片共享期限為 30 天；到期後 App 停止顯示共享照片。免費方案沒有背景清除排程，Drive 共享檔案會在上傳者再次連線時清理；Drive 支援到期權限時也會設定期限。原揪團刪除不會刪除本機相簿或私人 Drive 備份。刪除本機照片預設保留備份，可另外選擇一併刪除。',
         '資料會保存到你刪除為止。進行中的群組可以依編輯權限修改或刪除內容；建立者結清後可封存群組，封存期間帳本、行程與共同待辦僅供查閱。隱藏群組只改變你的列表，不會退出或移除歷史成員。',
         '群組建立者可以刪除整個群組及其中的帳目、行程與待辦。個人的行李清單、行李範本與旅行紀錄獨立保存，刪除原群組不會刪除這些副本；你可以自行刪除範本與旅行紀錄。',
         '清除瀏覽器的網站資料，就會刪除只存在裝置上的資料。',
@@ -96,6 +100,7 @@ const en: typeof zh = {
         'Group data: group name, destination, trip dates, members, and the expenses, itinerary and shared to-dos you and other members enter.',
         'Packing lists and templates: your own list items and the named templates you save.',
         'Personal trip records: saved destinations, dates and itinerary copies, without group members’ payment details.',
+        'Photo albums: filenames, capture dates, trip categories, itinerary links, uploaders and Drive file references. Photo files stay on your device and authorized Google Drive, not Firebase.',
       ],
     },
     {
@@ -106,6 +111,7 @@ const en: typeof zh = {
         "A group's expenses, itinerary and shared to-dos: everyone in that group.",
         'Your packing lists, packing templates, trip records and group hiding preferences: only you.',
         'Invitations: the sender and the recipient (group name and sender nickname).',
+        'Connecting trip photo sharing exposes your Google email to trip members to grant private Drive access. Photos are shared with specified accounts, without public links.',
       ],
     },
     {
@@ -120,6 +126,7 @@ const en: typeof zh = {
     {
       title: 'Third-party services',
       items: [
+        'Google Drive: optional access limited to app-created or selected files. Local photos and categories are backed up while the app is open, online and authorized. OAuth tokens stay in session memory and are never stored in Firestore or backups.',
         "Google Firebase: sign-in (Firebase Authentication), database (Cloud Firestore) and hosting (Firebase Hosting); data is stored on Google's servers.",
         'Firebase App Check with reCAPTCHA Enterprise: protects the AI features from abuse; Google collects device and interaction signals to tell people from bots.',
         "Google Gemini: only when you use the AI guide or AI list import are trip details, the current itinerary, text you paste or screenshots you add sent to Google. With your own API key the Gemini API terms apply, and on the free tier Google may use content to improve its services. If your quota runs out, that one request is handled by Divvy's Firebase AI Logic instead.",
@@ -135,6 +142,7 @@ const en: typeof zh = {
     {
       title: 'Keeping and deleting data',
       body: [
+        'Photo sharing lasts 30 days, then the app hides shared photos. The free implementation has no background cleanup scheduler; shared Drive files are removed when the uploader reconnects, with expiring permissions where supported. Removing a trip leaves local albums and private Drive backups intact. Local deletion keeps backups unless explicitly selected for removal.',
         'Data is kept until you delete it. Active groups can be edited according to permissions. Creators can archive settled groups; archived ledgers, itineraries and shared to-dos are read-only. Hiding a group changes only your list and preserves membership and historical balances.',
         'Creators can delete a group with its expenses, plan and shared to-dos. Personal packing lists, packing templates and trip records are stored independently and survive deletion of the original group. You can delete your templates and trip records separately.',
         'Clearing the site data in your browser removes what is kept only on your device.',

@@ -1,4 +1,34 @@
 export default {
+  photos: {
+    mine: 'My albums', personal: 'Personal photos', localTitle: 'On this device', sharing: 'Trip photos',
+    sharingHint: 'Photos are privately shared with Google accounts for 30 days, including after archiving. Connecting shares your Google email with trip members for Drive access. Uploaders grant new members access when they reconnect.',
+    localHint: 'Local photos are grouped by trip and capture date. Clearing site data or changing devices can remove them. Export a backup or connect Drive.',
+    driveHint: 'Access is limited to files created by this app or selected by you. Backups run while the app is open and online. Reconnect when authorization expires. Shared copies are cleaned up on the next connection, without deleting private backups.',
+    connect: 'Connect Google Drive', disconnect: 'Disconnect', retryBackup: 'Back up / retry', backingUp: 'Backing up automatically…',
+    storage: 'Device usage {used} MB / quota {quota} MB', persistent: 'Persistent storage granted', notPersistent: 'Storage may be reclaimed; keep a backup',
+    quality: 'Quality', standard: 'Standard', original: 'Original', upload: 'Upload and share', addLocal: 'Add local photos',
+    limits: 'Up to 50 photos per batch, 25 MB each. Standard photos are resized to 2048 px. Each trip can share up to 500 photos in total.',
+    batchLimit: 'Add no more than 50 photos per batch.', import: 'Import ZIP backup', export: 'Export ZIP backup', driveRestore: 'Restore from Drive',
+    restoreSelected: 'Restore selected backups', more: 'Load more', groupFilter: 'Trip album', allGroups: 'All trips', date: 'Date', clearDate: 'Clear date filter',
+    onlyMissing: 'Not saved on this device', selectAll: 'Select all', clearSelection: 'Deselect all', refresh: 'Refresh', authorize: 'Authorize shared photos',
+    selected: '{count} photos selected', saveLocal: 'Save to my albums', download: 'Download selected', correctDate: 'Correct selected dates',
+    noItinerary: 'No itinerary link', link: 'Link itinerary', removeBackup: 'Also delete my Drive backups', ownerOnly: 'Only the uploader or trip creator can edit or remove shared photos.',
+    empty: 'No photos here yet', day: 'Day {day}', savedLocal: 'Saved on this device', notSaved: 'Not saved locally', expiry: 'Expires in {days} days; save or download',
+    downloadRequested: 'File download requested (not saved to this app)', previewHint: 'If the original format cannot be previewed, download it to view.',
+    deleteTitle: 'Delete selected photos?', deleteSharedHint: 'Sharing stops. The uploader cleans up Drive files on the next connection. Local copies and private backups remain.',
+    deleteLocalHint: 'Remove photos from this device. Shared copies and Drive backups remain and will not restore automatically.', deleteBothHint: 'Delete local photos and your Drive backups. Shared copies remain.',
+    showAll: 'View all photos', itemPhotos: 'View itinerary photos', reminder: '{name}: {count} photos expire soon. Save or download them.',
+    backup: { pending: 'Pending backup', running: 'Backing up', done: 'Backed up', failed: 'Backup failed; retry' },
+    errors: {
+      'drive-connect': 'Reconnect Google Drive to continue.', 'drive-full': 'Your Drive is full. Free some space or use standard quality.',
+      'drive-access': 'Drive access failed. Check Drive API and sharing permissions. Authorize shared photos through the picker and ask the uploader to reconnect to sync access.',
+      'drive-file': 'This photo may be removed or require authorization through the shared photo picker.', 'drive-picker': 'The Google Picker could not open. Check Picker API and API key settings.',
+      'photo-format': 'Unsupported photo. Use JPEG/PNG, or original quality to preserve HEIC.', 'photo-too-large': 'Each photo must be between 1 byte and 25 MB.',
+      'photo-expired': 'The shared photo expired. Local copies and private backups remain available.', 'photo-quota': 'This trip reached its 500 share record limit. Save or download existing photos.',
+      'archive-limit': 'Select at most 50 photos totaling 100 MB per ZIP.', 'invalid-archive': 'Invalid backup format, size or photo data. Nothing was imported.',
+      failed: 'The operation did not finish. Check your connection and device storage, then retry. Successfully saved photos remain available.',
+    },
+  },
   itemized: {
     "enable": "Add item details / batch entry",
     "hint": "Choose who paid and who shares each item. Save all items as one expense.",
@@ -205,7 +235,7 @@ export default {
     category: 'Category',
     notePlaceholder: 'Note (optional)',
     justMe: 'Just me',
-    tabs: { ledger: 'Ledger', itinerary: 'Itinerary', stats: 'Stats', tools: 'Tools' },
+    tabs: { ledger: 'Ledger', itinerary: 'Itinerary', stats: 'Stats', tools: 'Tools', photos: 'Photos' },
   },
 
   settle: {

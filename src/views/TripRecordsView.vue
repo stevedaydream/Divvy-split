@@ -74,6 +74,7 @@ async function remove(): Promise<void> {
     </div>
     <AppSheet :open="!!selected" :title="selected?.name" @close="!saving && (selected = null)">
       <template v-if="selected">
+        <RouterLink :to="{ name: 'photos', query: { group: selected.id } }" class="mb-3 block text-sm text-accent">{{ t('photos.mine') }}</RouterLink>
         <p class="text-xs text-muted">{{ selected.startDate }}{{ selected.endDate ? ` → ${selected.endDate}` : '' }}</p>
         <ol class="mt-4 space-y-3">
           <li v-for="(item, index) in [...selected.items].sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))" :key="index" class="rounded-xl border border-border p-3">

@@ -13,6 +13,7 @@ import AppSheet from '@/components/ui/AppSheet.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
 import GroupCard from '@/components/group/GroupCard.vue'
 import InvitationList from '@/components/group/InvitationList.vue'
+import PhotoExpiryNotice from '@/components/photos/PhotoExpiryNotice.vue'
 import CountryPicker from '@/components/currency/CountryPicker.vue'
 import CurrencyPicker from '@/components/currency/CurrencyPicker.vue'
 import { countryName } from '@/data/countries'
@@ -235,6 +236,7 @@ async function toggleHidden(): Promise<void> {
 
     <div class="px-5 py-5">
       <InvitationList />
+      <PhotoExpiryNotice />
       <div class="mb-4 flex items-center justify-between gap-3">
         <nav class="flex gap-3 text-xs" :aria-label="t('travel.groupScope')">
           <button v-for="option in (['active', 'archived', 'hidden'] as const)" :key="option" type="button" :class="scope === option ? 'font-semibold text-accent' : 'text-muted'" :aria-pressed="scope === option" @click="scope = option">{{ t(`travel.${option}`) }}</button>

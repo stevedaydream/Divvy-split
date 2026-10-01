@@ -1,4 +1,34 @@
 export default {
+  photos: {
+    mine: '我的相簿', personal: '個人照片', localTitle: '本機相簿', sharing: '同行照片',
+    sharingHint: '照片以指定 Google 帳號分享，保存 30 天；封存後仍可補傳。連接時會將你的 Google email 提供給此揪團成員以授權分享，上傳者下次連線會補上新成員權限。',
+    localHint: '本機照片依揪團及拍攝日期分類。清除網站資料或換裝置可能遺失，請匯出備份或連接 Drive。',
+    driveHint: '僅授權 App 建立或你選取的 Drive 檔案。連接後，App 開啟且有網路時自動備份。授權到期請重新連接；共享照片到期或刪除後，下次連線清理共享版本，不影響私人備份。',
+    connect: '連接 Google Drive', disconnect: '中斷連接', retryBackup: '備份／重試', backingUp: '正在自動備份…',
+    storage: '裝置已用 {used} MB／可用額度 {quota} MB', persistent: '已取得持續儲存', notPersistent: '裝置可能回收空間，請保留備份',
+    quality: '畫質', standard: '一般畫質', original: '原始畫質', upload: '上傳並分享', addLocal: '加入本機照片',
+    limits: '每批最多 50 張，每張 25 MB；一般畫質最長邊 2048 px。每揪團累計最多分享 500 張。',
+    batchLimit: '每批最多 50 張，請分批加入。', import: '匯入 ZIP 備份', export: '匯出 ZIP 備份', driveRestore: '從 Drive 還原',
+    restoreSelected: '還原選取備份', more: '載入更多', groupFilter: '揪團分類', allGroups: '全部揪團', date: '日期', clearDate: '清除日期篩選',
+    onlyMissing: '只看未保存', selectAll: '全選', clearSelection: '取消全選', refresh: '重新整理', authorize: '授權讀取同行照片',
+    selected: '已選取 {count} 張', saveLocal: '保存到我的相簿', download: '下載選取照片', correctDate: '更正選取日期',
+    noItinerary: '未連結行程', link: '連結行程', removeBackup: '同時刪除自己的 Drive 備份', ownerOnly: '只有上傳者或揪團建立者可修改、刪除共享照片。',
+    empty: '目前沒有照片', day: '第 {day} 天', savedLocal: '已存本機', notSaved: '未保存到本機', expiry: '{days} 天後到期，請保存或下載',
+    downloadRequested: '已要求下載檔案（不代表已存本機）', previewHint: '若裝置無法預覽原始格式，請下載後查看。',
+    deleteTitle: '刪除選取照片？', deleteSharedHint: '停止共享；上傳者下次連接 Drive 時清理檔案。已保存的本機與私人備份不受影響。',
+    deleteLocalHint: '刪除這台裝置上的照片，保留共享版本與 Drive 備份；不會自動還原。', deleteBothHint: '刪除本機照片與自己的 Drive 備份，共享版本不受影響。',
+    showAll: '查看全部照片', itemPhotos: '查看行程照片', reminder: '「{name}」有 {count} 張照片即將到期，請保存或下載。',
+    backup: { pending: '待備份', running: '備份中', done: '已備份', failed: '備份失敗，請重試' },
+    errors: {
+      'drive-connect': '請重新連接 Google Drive，再繼續操作。', 'drive-full': '你的 Drive 空間不足；請整理空間或改用一般畫質。',
+      'drive-access': '無法存取 Drive。請確認已啟用 Drive API、分享權限；同行照片可先按「授權讀取同行照片」，並請上傳者重新連接同步權限。',
+      'drive-file': '照片可能已移除，或需按「授權讀取同行照片」選取檔案後重試。', 'drive-picker': '無法開啟 Google 選取器，請確認 Google Picker API 與 API Key 設定。',
+      'photo-format': '此照片格式無法處理。請改用 JPEG／PNG，或以原始畫質保存 HEIC。', 'photo-too-large': '單張照片須介於 1 byte 至 25 MB。',
+      'photo-expired': '共享照片已到期；本機及私人備份仍可使用。', 'photo-quota': '此揪團已達 500 筆分享上限，請下載或保存現有照片。',
+      'archive-limit': 'ZIP 每次最多 50 張、合計 100 MB，請分批選取。', 'invalid-archive': '備份格式、大小或照片資料不正確，未匯入。',
+      failed: '操作未完成，請檢查網路與裝置空間後重試。已成功保存的照片仍會保留。',
+    },
+  },
   itemized: {
     "enable": "加入明細／批量記帳",
     "hint": "每項可指定不同付款人與分攤對象，全部明細合併成一筆帳目。",
@@ -205,7 +235,7 @@ export default {
     category: '分類',
     notePlaceholder: '備註（選填）',
     justMe: '只有我',
-    tabs: { ledger: '帳本', itinerary: '行程', stats: '統計', tools: '工具' },
+    tabs: { ledger: '帳本', itinerary: '行程', stats: '統計', tools: '工具', photos: '照片' },
   },
 
   settle: {

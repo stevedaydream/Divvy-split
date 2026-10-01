@@ -106,3 +106,13 @@ PWA 的 `navigateFallbackDenylist: [/^\/__\//]` 必須保留，否則 service wo
 **處理**：先判斷索引是否存在才呼叫明細函式，以局部變數減少欄位重讀，並將版本更新分成較短的規則入口。
 明細上限統一為 12 項（`MAX_EXPENSE_ITEMS` 與 rules 同步），在模擬器實際驗證最大項目數能寫入、錯誤總和會被拒絕。
 調高上限或擴充規則時必須重跑模擬器測試，不能只看 type-check 或純計算測試。
+
+---
+
+## B9. Drive 縮圖與安裝版 PWA 授權不能直接沿用一般網頁流程
+
+**限制**：Drive `thumbnailLink` 不適合直接嵌入網頁（CORS）；`drive.file` 也不會因檔案共享給本人就自動授權 App。安裝版 PWA 的 popup 重新授權另有 B7 的跨瀏覽器狀態問題。
+
+**處理**：共享照片建立獨立 320px 縮圖並授權指定帳號，以帶 token 的 Drive media API 讀取；同行者用 Picker 授權所選檔案，授權後重新嘗試預覽，小於 200 KB 的原圖可作縮圖備援。已有本機照片優先用本機 Blob，不必再讀雲端。PWA 改用 `reauthenticateWithRedirect`，跳轉前只存帳號連線意圖，返回後 token 僅保留記憶體。
+
+**驗證範圍**：手機版本機縮圖與封存團照片分頁已實際檢查；權限回應、帳號切換與 PWA 跳轉交接有單元測試。正式 Drive／Picker 與 PWA Google 授權仍需真實帳號驗證。

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, BedDouble, CalendarDays, MapPin, Plane, Plus, ReceiptText, Sparkles } from 'lucide-vue-next'
+import { AlertTriangle, BedDouble, CalendarDays, Image, MapPin, Plane, Plus, ReceiptText, Sparkles } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
 import { categoryEmoji } from '@/data/categories'
 import { formatDay, todayIso } from '@/lib/dates'
@@ -19,6 +19,7 @@ const emit = defineEmits<{
   add: [date: string, kind: ItineraryKind]
   edit: [item: ItineraryItem]
   record: [item: ItineraryItem]
+  photos: [item: ItineraryItem]
   setDates: [start: string, end: string]
   ai: []
 }>()
@@ -176,6 +177,7 @@ function saveDates(): void {
               </span>
             </button>
             <div class="flex shrink-0 gap-0.5">
+              <button type="button" class="grid size-8 place-items-center rounded-full text-muted hover:text-accent" :aria-label="t('photos.itemPhotos')" @click="emit('photos', item)"><Image class="size-4" /></button>
               <a
                 :href="mapsUrl(item)"
                 target="_blank"

@@ -56,10 +56,11 @@ view 不得直接 import `firebase/firestore`。
 | `/privacy` | PrivacyView | 隱私權政策（`meta.open`：未登入、未建檔也能看）；內容須與程式和 firestore.rules 一致 |
 | `/onboarding` | OnboardingView | 暱稱、主要幣別、收款資訊 |
 | `/groups` | GroupsView | 「揪團」群組列表（底部導航第 1 格），分為進行中／已結束／已隱藏；個人隱藏不更動成員與歷史分帳 |
-| `/groups/:id` | GroupDetailView | 分頁：行程／帳本（依日期分段）／統計／工具，預設分頁依旅行階段（`defaultTab`）；結算按鈕分三態：待結算 N 筆／未有待分帳款／已結清・結算 N 次；一人群組隱藏結算與成員列 |
+| `/groups/:id` | GroupDetailView | 分頁：行程／帳本（依日期分段）／統計／工具／照片，預設分頁依旅行階段（`defaultTab`）；結算按鈕分三態：待結算 N 筆／未有待分帳款／已結清・結算 N 次；一人群組隱藏結算與成員列 |
 | `/calculator` | CalculatorView | 匯率換算計算機（第 2 格）；定位鈕把基準換成所在地幣別，主要幣別固定排第一 |
 | `/profile` | ProfileView | 個人檔案、語言、外觀、登出（第 3 格） |
 | `/trips` | TripRecordsView | 個人旅行紀錄，查閱完整行程、換日期複製成新旅行、刪除自己的副本 |
+| `/photos` | PhotosView | 我的本機相簿，依揪團／拍攝日期／旅行天數分類；`?group=` 指定揪團，支援 ZIP 匯出匯入與 Drive 備份還原 |
 
 路由守衛只 `await authStore.init()`（整個 app 生命週期只解析一次），
 不再於每次導航重新訂閱 `onAuthStateChanged` 或重讀 profile 文件。
@@ -130,6 +131,17 @@ view 不得直接 import `firebase/firestore`。
 
 詳見 `src/types/models.ts`。
 
+### 照片與相簿
+
+- `types/photos.ts`、`services/localPhotos.ts`：IndexedDB 以 `[uid, id]` 隔離帳號，本機保存成功才標示「已存本機」。清除網站資料會遺失，提供 ZIP 與私人 Drive 備份。
+- `services/photoFiles.ts`：EXIF 拍攝日期、一般畫質 2048px／原始畫質、320px 縮圖、ZIP 照片與分類資料還原；每批 50 張、每張 25 MB，ZIP 合計 100 MB。HEIC 原始檔可保存，預覽依裝置支援。
+- `services/photoDrive.ts`：僅 `drive.file` 授權、token 只在記憶體；安裝版 PWA 以跳轉重新授權。私人備份與指定 Google 帳號的唯讀共享副本獨立；同行者用 Google Picker 授權 App 讀取所選檔案。
+- `services/sharedPhotos.ts`：Firestore 僅保存 `groups/{id}/photos` 索引、`photoMembers` 的本人 Google email、`photoCounters` 的累計分享數（500 張）。讀取每頁 50 筆，提醒每團最多 20 筆；自動權限同步／清理每帳號 6 小時一次，手動連接或重試可立即同步。
+- 照片分頁支援全選、批量保存／下載／日期更正／行程連結；上傳者與建立者可管理，封存後可補傳。我的頁面與旅行紀錄可進入本機相簿；本機、共享副本與私人備份的刪除互不連動。
+- 共享期限 30 天，App 開啟時提示未保存且 7 天內到期的照片，包含最後 1 天。到期在 App 隱藏；實體 Drive 共享副本需上傳者下次連接才清除，無伺服器排程。私人自動備份只於 App 開啟、有網路、授權有效時執行。
+- 正式啟用前需在既有 Google Cloud 專案啟用 Drive API、Google Picker API，設定 OAuth 同意畫面的 `drive.file` scope，確認既有瀏覽器 API Key 限制允許 Picker 與正式網域。設定資訊見 `secret.md`；不更改 Firebase 計費方案。
+- 驗證：121 項單元測試（Drive 使用模擬回應）、8 項 Auth／Firestore 整合測試、390px 手機版本機保存／全選／日期更正／重新載入及封存團照片分頁。正式 Google 授權、跨帳號 Drive 分享與備份尚未實測；未合併、推送或部署。
+
 ## 5. 分帳演算法
 
 `src/lib/settlement.ts`，純函式、零相依，由 Vitest 覆蓋：
@@ -154,7 +166,7 @@ Chart.js 以 dynamic import 載入；`vite.config.ts` 的 manualChunks 刻意不
   且只允許把自己加進 `memberIds`，其餘欄位不得變動。
 - 群組擁有者可 `rotateInviteCode()` 使舊連結全部失效。
 - `entries` 只有 `createdBy` 本人可改／刪，且不可搬移到其他群組。
-- 封存／重新開啟及永久刪除限建立者；封存後的共享內容與邀請由規則阻擋寫入。
+- 封存／重新開啟及永久刪除限建立者；封存後的帳本、行程、共同待辦與邀請由規則阻擋寫入，照片仍可管理。
 - 帳目／行程修改須在同批交易增加相對應版本；明細的金額總和與付款／分攤成員由規則驗證。
 - 旅行紀錄、行李範本及群組隱藏設定只有本人可讀寫。封存的零餘額判定由 service 重讀伺服器帳本並比對版本，規則不遍歷全帳本。
 
@@ -174,6 +186,7 @@ npm run preview     # 預覽 dist
 
 ## 8. 近期變更
 
+- 2026-10-02：新增本機相簿與 Drive 同行照片分享、全選、ZIP 匯出還原、行程連結、30 天分享期限及前景自動私人備份。Firebase 不儲存照片原檔，不新增付費服務；正式 Drive 串接待實測，功能分支未部署。
 - 2026-10-02：繁體中文功能頁標題與底部導航由「群組」改為「揪團」。
 - 2026-10-02：旅行記帳功能分支已合併至 `main`，Firestore 規則已編譯並部署至既有 Firebase 專案；尚未推送或部署前端。
 - 2026-10-02：新增自己記帳預設、多付款人明細及事後補明細、旅行封存與個人行程副本、具名行李範本。

@@ -147,16 +147,19 @@ export async function joinGroup(
 /** Removes the group and every entry filed against it. Owner only. */
 export async function deleteGroup(groupId: string): Promise<void> {
   await updateDoc(doc(db, COLLECTION, groupId), { deleting: true, updatedAt: serverTimestamp() })
-  const [entries, itinerary, todos] = await Promise.all([
+  const [entries, itinerary, todos, photos, photoMembers, photoCounters] = await Promise.all([
     getDocs(query(collection(db, 'entries'), where('groupId', '==', groupId))),
     getDocs(collection(db, COLLECTION, groupId, 'itinerary')),
     getDocs(collection(db, COLLECTION, groupId, 'todos')),
+    getDocs(collection(db, COLLECTION, groupId, 'photos')),
+    getDocs(collection(db, COLLECTION, groupId, 'photoMembers')),
+    getDocs(collection(db, COLLECTION, groupId, 'photoCounters')),
   ])
 
   // A batch caps at 500 writes, so large ledgers are committed in chunks.
   // Members' personal packing lists live under their own user docs and are
   // left alone: nobody else may touch them, and they are harmless orphans.
-  const refs = [...entries.docs, ...itinerary.docs, ...todos.docs].map((d) => d.ref)
+  const refs = [...entries.docs, ...itinerary.docs, ...todos.docs, ...photos.docs, ...photoMembers.docs, ...photoCounters.docs].map((d) => d.ref)
   for (let i = 0; i < refs.length; i += 400) {
     const batch = writeBatch(db)
     refs.slice(i, i + 400).forEach((ref) => batch.delete(ref))

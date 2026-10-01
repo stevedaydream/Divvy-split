@@ -5,6 +5,7 @@ import { useI18n } from 'vue-i18n'
 import { Eye, EyeOff, LogOut, Pencil, UsersRound } from 'lucide-vue-next'
 import AppShell from '@/components/layout/AppShell.vue'
 import TopBar from '@/components/layout/TopBar.vue'
+import { disconnectDrive } from '@/services/photoDrive'
 import AppFooter from '@/components/layout/AppFooter.vue'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
@@ -68,6 +69,7 @@ async function signOut(): Promise<void> {
   if (!confirmed) return
 
   groups.reset()
+  disconnectDrive()
   await auth.logout()
   await router.replace({ name: 'login' })
 }
@@ -78,6 +80,7 @@ async function signOut(): Promise<void> {
     <TopBar :title="t('profile.title')" />
 
     <div class="space-y-6 px-5 py-5">
+      <RouterLink :to="{ name: 'photos' }" class="block rounded-card border border-border bg-surface p-4 text-sm font-medium text-accent">{{ t('photos.mine') }}</RouterLink>
       <section class="flex items-center gap-4 rounded-card border border-border bg-surface p-5 shadow-card">
         <AppAvatar :name="profile?.nickname ?? '?'" size="lg" />
         <div class="min-w-0">
