@@ -55,7 +55,7 @@ view 不得直接 import `firebase/firestore`。
 | `/join?g=&c=` | JoinView | 邀請連結入口，驗證 inviteCode 後加入群組 |
 | `/privacy` | PrivacyView | 隱私權政策（`meta.open`：未登入、未建檔也能看）；內容須與程式和 firestore.rules 一致 |
 | `/onboarding` | OnboardingView | 暱稱、主要幣別、收款資訊 |
-| `/groups` | GroupsView | 群組列表（底部導航第 1 格），分為進行中／已結束／已隱藏；個人隱藏不更動成員與歷史分帳 |
+| `/groups` | GroupsView | 「揪團」群組列表（底部導航第 1 格），分為進行中／已結束／已隱藏；個人隱藏不更動成員與歷史分帳 |
 | `/groups/:id` | GroupDetailView | 分頁：行程／帳本（依日期分段）／統計／工具，預設分頁依旅行階段（`defaultTab`）；結算按鈕分三態：待結算 N 筆／未有待分帳款／已結清・結算 N 次；一人群組隱藏結算與成員列 |
 | `/calculator` | CalculatorView | 匯率換算計算機（第 2 格）；定位鈕把基準換成所在地幣別，主要幣別固定排第一 |
 | `/profile` | ProfileView | 個人檔案、語言、外觀、登出（第 3 格） |
@@ -174,6 +174,7 @@ npm run preview     # 預覽 dist
 
 ## 8. 近期變更
 
+- 2026-10-02：繁體中文功能頁標題與底部導航由「群組」改為「揪團」。
 - 2026-10-02：旅行記帳功能分支已合併至 `main`，Firestore 規則已編譯並部署至既有 Firebase 專案；尚未推送或部署前端。
 - 2026-10-02：新增自己記帳預設、多付款人明細及事後補明細、旅行封存與個人行程副本、具名行李範本。
   驗證涵蓋分帳與匯率尾差單元測試、Auth／Firestore 模擬器交易與權限測試，以及手機寬度的實際介面操作。

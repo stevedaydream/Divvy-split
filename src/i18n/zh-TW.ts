@@ -69,7 +69,7 @@ export default {
     "deleteTitle": "刪除「{name}」範本？",
     "deleteHint": "已套用到旅行的行李項目不受影響。"
   },
-  nav: { groups: '群組', calculator: '換算', profile: '我的' },
+  nav: { groups: '揪團', calculator: '換算', profile: '我的' },
 
   common: {
     back: '返回', cancel: '取消', save: '儲存', close: '關閉', edit: '編輯',
@@ -115,7 +115,7 @@ export default {
   },
 
   groups: {
-    title: '群組',
+    title: '揪團',
     empty: '還沒有群組',
     emptyHint: '為下一趟旅行、合租或聚餐建立一個吧。',
     create: '新增群組',
