@@ -1,16 +1,17 @@
 import {
-  addDoc, collection, deleteDoc, doc, onSnapshot, orderBy, query,
-  serverTimestamp, updateDoc, where,
+  collection, doc, onSnapshot, orderBy, query,
+  runTransaction, serverTimestamp, where,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { isCategory } from '@/data/categories'
 import { isIsoDate, toIsoDate, todayIso } from '@/lib/dates'
-import type { Entry, EntryCategory, EntryType, SettlementMethod } from '@/types/models'
+import { validExpenseItems } from '@/lib/expenseItems'
+import type { Entry, EntryCategory, EntryType, ExpenseItem, SettlementMethod } from '@/types/models'
 import type { CurrencyCode } from '@/types/currency'
 
 const COLLECTION = 'entries'
 
-function toEntry(id: string, data: Record<string, unknown>): Entry {
+export function toEntry(id: string, data: Record<string, unknown>): Entry {
   const createdAt = (data.createdAt as Entry['createdAt']) ?? null
   return {
     id,
@@ -19,6 +20,7 @@ function toEntry(id: string, data: Record<string, unknown>): Entry {
     title: (data.title as string) ?? '',
     payerId: (data.payerId as string) ?? '',
     participantIds: (data.participantIds as string[]) ?? [],
+    items: (data.items as ExpenseItem[]) ?? [],
     amountMinor: (data.amountMinor as number) ?? 0,
     currency: (data.currency as string) ?? 'USD',
     rate: (data.rate as number) ?? 1,
@@ -67,6 +69,7 @@ export interface EntryDraft {
   title: string
   payerId: string
   participantIds: string[]
+  items?: ExpenseItem[]
   amountMinor: number
   currency: CurrencyCode
   /** Captured at write time so the entry never re-prices itself later. */
@@ -79,10 +82,13 @@ export interface EntryDraft {
 }
 
 export async function createEntry(draft: EntryDraft, uid: string): Promise<string> {
-  const ref = await addDoc(collection(db, COLLECTION), {
-    ...draft,
-    createdBy: uid,
-    createdAt: serverTimestamp(),
+  const ref = doc(collection(db, COLLECTION))
+  await runTransaction(db, async (transaction) => {
+    const groupRef = doc(db, 'groups', draft.groupId)
+    const group = await transaction.get(groupRef)
+    validateDraft(draft, group.data(), uid)
+    transaction.set(ref, { ...draft, items: draft.items ?? [], createdBy: uid, createdAt: serverTimestamp() })
+    transaction.update(groupRef, { ledgerRevision: (group.data()?.ledgerRevision ?? 0) + 1, updatedAt: serverTimestamp() })
   })
   return ref.id
 }
@@ -92,9 +98,44 @@ export async function createEntry(draft: EntryDraft, uid: string): Promise<strin
  * touch the amount keeps the original rate and the figure stays put.
  */
 export async function updateEntry(entryId: string, draft: EntryDraft): Promise<void> {
-  await updateDoc(doc(db, COLLECTION, entryId), { ...draft })
+  await runTransaction(db, async (transaction) => {
+    const entryRef = doc(db, COLLECTION, entryId)
+    const entry = await transaction.get(entryRef)
+    if (!entry.exists() || entry.data().groupId !== draft.groupId) throw new Error('entry-changed')
+    const groupRef = doc(db, 'groups', draft.groupId)
+    const group = await transaction.get(groupRef)
+    validateDraft(draft, group.data(), entry.data().createdBy)
+    transaction.update(entryRef, { ...draft, items: draft.items ?? [] })
+    transaction.update(groupRef, { ledgerRevision: (group.data()?.ledgerRevision ?? 0) + 1, updatedAt: serverTimestamp() })
+  })
 }
 
 export async function deleteEntry(entryId: string): Promise<void> {
-  await deleteDoc(doc(db, COLLECTION, entryId))
+  const entryRef = doc(db, COLLECTION, entryId)
+  await runTransaction(db, async (transaction) => {
+    const entry = await transaction.get(entryRef)
+    if (!entry.exists()) throw new Error('entry-not-found')
+    const groupRef = doc(db, 'groups', entry.data().groupId)
+    const group = await transaction.get(groupRef)
+    if (!group.exists() || group.data().archived || group.data().deleting) throw new Error('group-archived')
+    transaction.delete(entryRef)
+    transaction.update(groupRef, { ledgerRevision: (group.data().ledgerRevision ?? 0) + 1, updatedAt: serverTimestamp() })
+  })
+}
+
+function validateDraft(draft: EntryDraft, group: Record<string, unknown> | undefined, author: string): void {
+  if (!group || group.archived || group.deleting) throw new Error('group-archived')
+  const members = group.memberIds as string[]
+  if (!members.includes(author) || !members.includes(draft.payerId)
+    || !Number.isSafeInteger(draft.amountMinor) || draft.amountMinor <= 0 || draft.amountMinor > 1_000_000_000_000
+    || !Number.isSafeInteger(draft.groupAmountMinor) || draft.groupAmountMinor < 0
+    || !Number.isFinite(draft.rate) || draft.rate <= 0
+    || !draft.participantIds.length || new Set(draft.participantIds).size !== draft.participantIds.length
+    || !draft.participantIds.every((id) => members.includes(id))) throw new Error('invalid-entry')
+  if (draft.type === 'settlement' && (draft.items?.length || draft.participantIds.length !== 1 || draft.participantIds[0] === draft.payerId)) throw new Error('invalid-settlement')
+  if (draft.items?.length) {
+    if (!validExpenseItems(draft.items, draft.amountMinor, members)) throw new Error('invalid-items')
+    const ids = new Set(draft.items.flatMap((item) => item.participantIds))
+    if (ids.size !== draft.participantIds.length || !draft.participantIds.every((id) => ids.has(id))) throw new Error('invalid-items')
+  }
 }

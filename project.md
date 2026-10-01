@@ -55,10 +55,11 @@ view 不得直接 import `firebase/firestore`。
 | `/join?g=&c=` | JoinView | 邀請連結入口，驗證 inviteCode 後加入群組 |
 | `/privacy` | PrivacyView | 隱私權政策（`meta.open`：未登入、未建檔也能看）；內容須與程式和 firestore.rules 一致 |
 | `/onboarding` | OnboardingView | 暱稱、主要幣別、收款資訊 |
-| `/groups` | GroupsView | 群組列表（底部導航第 1 格） |
+| `/groups` | GroupsView | 群組列表（底部導航第 1 格），分為進行中／已結束／已隱藏；個人隱藏不更動成員與歷史分帳 |
 | `/groups/:id` | GroupDetailView | 分頁：行程／帳本（依日期分段）／統計／工具，預設分頁依旅行階段（`defaultTab`）；結算按鈕分三態：待結算 N 筆／未有待分帳款／已結清・結算 N 次；一人群組隱藏結算與成員列 |
 | `/calculator` | CalculatorView | 匯率換算計算機（第 2 格）；定位鈕把基準換成所在地幣別，主要幣別固定排第一 |
 | `/profile` | ProfileView | 個人檔案、語言、外觀、登出（第 3 格） |
+| `/trips` | TripRecordsView | 個人旅行紀錄，查閱完整行程、換日期複製成新旅行、刪除自己的副本 |
 
 路由守衛只 `await authStore.init()`（整個 app 生命週期只解析一次），
 不再於每次導航重新訂閱 `onAuthStateChanged` 或重讀 profile 文件。
@@ -71,6 +72,10 @@ view 不得直接 import `firebase/firestore`。
   小數位數由 `data/currencies.ts` 決定（JPY/KRW 為 0，KWD 為 3）。
 - **`Entry.rate` 是寫入當下的匯率快照**，`groupAmountMinor` 由它換算而來。
   編輯舊帳目時若金額與幣別未變動，沿用原 rate，金額不會隨時間漂移。
+- **預設自己記帳與明細**：新增支出（含行程快捷記帳）預設只選自己；舊帳保留原分攤。
+  `Entry.items` 可保存最多 12 項明細，各項含名稱、原幣金額、付款人與分攤對象；共用整筆的日期、幣別與分類。
+  新增時自動加總；舊帳可事後補明細，若總額或幣別改變，需勾選確認更正。
+  `lib/expenseItems.ts` 以最大餘數法分配換算後總額，再逐項均分；結算、個人統計及帳本展開明細共用相同計算。
 - **`Group.members` 反正規化**存成 `Record<uid, { nickname, payment }>`，
   成員清單不需要 N 次 `getDoc`。`memberIds` 陣列供 `array-contains` 查詢。
 - `expense` 與 `settlement` 共用同一個 `Entry` 模型，用 `type` 區分。
@@ -95,6 +100,14 @@ view 不得直接 import `firebase/firestore`。
   `estimateMinor` 是群組幣別的預估花費，統計分頁以天對照實際（僅「全體」）。
   排版邏輯在 `lib/itinerary.ts`（`layoutDays` 會把旅行日期外的項目另外列出）。
   刪除群組時一併刪除行程；規則允許群組擁有者刪除他人帳目，否則刪群組會失敗。
+- **旅行收尾**：建立者在「結束旅行」檢查全員淨餘額為零後封存，日期結束只提示、不自動封存。
+  封存群組的帳本、行程、共同待辦僅供查閱，禁止邀請；建立者可重新開啟補帳。
+  `services/tripRecords.ts` 封存前重讀伺服器帳本與行程，比對群組版本，避免並行補帳漏算；封存及個人副本在同一交易寫入。
+  `Group.ledgerRevision/planRevision` 隨帳目／行程交易更新，舊群組缺值視為零。
+  各成員可保存 `users/{uid}/trips/{groupId}` 的目的地、日期與完整行程副本（不含成員收款資料及編輯者 ID），
+  同群組再次保存會更新自己的副本。刪除原群組不影響副本；複製最多 450 項行程，平移日期及住宿退房日，建立只有自己的新群組，不帶入舊帳。
+  群組隱藏設定存於 `users/{uid}/groupPreferences`；原本會改變歷史分帳的直接退出入口改為個人隱藏，可恢復顯示。
+  永久刪除先標記 `deleting`，阻擋新增與封存，再清除群組共享資料。
 
 - **邀請**：群組頁「邀請成員」開啟 InviteSheet：分享連結，或邀請「最近同行者」
   （`services/contacts.ts` 的 `listContacts`，由已可讀的群組成員算出，不額外查詢）。
@@ -107,6 +120,9 @@ view 不得直接 import `firebase/firestore`。
   （`lib/entryQr.ts`，縮至 900px PNG），因為是個人證件、且機場常沒網路。刪除群組不會刪到成員的個人行李清單。
   行李清單的「AI 整理」可貼上旅行社／朋友的清單文字或截圖（`lib/images.ts` 縮成 1600px JPEG），
   AI 分成行李與待辦、略過已存在的項目，預覽勾選後才加入。
+- **多個行李範本**：工具頁可將目前個人行李清單命名保存到 `users/{uid}/packingTemplates`，例如水肺、自潛、快閃、採購。
+  每個範本最多 450 項，只保留文字；可預覽選項並在同一趟旅行套用多個範本，略過重複項目，新增項目全部未勾選。
+  固定項目文件 ID 配合交易，避免多裝置同時套用產生重複或重設完成狀態；套用後的清單與原範本獨立，範本可自行刪除。
 
 - **AI 導遊**（行程分頁）：產生行程／調整行程／解析訂位三種模式，使用者自己的 Gemini Key
   （只存在裝置，見 D16）。回應經 `lib/ai.ts` 驗證，預覽勾選後才寫入行程。
@@ -138,6 +154,9 @@ Chart.js 以 dynamic import 載入；`vite.config.ts` 的 manualChunks 刻意不
   且只允許把自己加進 `memberIds`，其餘欄位不得變動。
 - 群組擁有者可 `rotateInviteCode()` 使舊連結全部失效。
 - `entries` 只有 `createdBy` 本人可改／刪，且不可搬移到其他群組。
+- 封存／重新開啟及永久刪除限建立者；封存後的共享內容與邀請由規則阻擋寫入。
+- 帳目／行程修改須在同批交易增加相對應版本；明細的金額總和與付款／分攤成員由規則驗證。
+- 旅行紀錄、行李範本及群組隱藏設定只有本人可讀寫。封存的零餘額判定由 service 重讀伺服器帳本並比對版本，規則不遍歷全帳本。
 
 ## 7. 開發指令
 
@@ -145,9 +164,15 @@ Chart.js 以 dynamic import 載入；`vite.config.ts` 的 manualChunks 刻意不
 npm run dev         # 開發伺服器
 npm run typecheck   # vue-tsc --noEmit
 npm run test        # vitest run
+npm run test:emulators # 本機 Auth／Firestore 整合測試（Firebase CLI + Java 21）
 npm run build       # typecheck + vite build
 npm run preview     # 預覽 dist
 ```
 
 `dev.bat`（雙擊）：上述指令 + 部署（Firestore 規則／索引、Hosting），
 部署一律帶 `--project divvy-app-e4565` 並需輸入 `y` 確認。
+
+## 8. 近期變更
+
+- 2026-10-02：新增自己記帳預設、多付款人明細及事後補明細、旅行封存與個人行程副本、具名行李範本。
+  驗證涵蓋分帳與匯率尾差單元測試、Auth／Firestore 模擬器交易與權限測試，以及手機寬度的實際介面操作。

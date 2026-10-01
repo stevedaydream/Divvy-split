@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { ImagePlus, QrCode, Trash2, X } from 'lucide-vue-next'
 import ChecklistCard from '@/components/group/ChecklistCard.vue'
 import ChecklistImportSheet from '@/components/group/ChecklistImportSheet.vue'
+import PackingTemplateSheet from '@/components/group/PackingTemplateSheet.vue'
 import {
   addChecklistItem, addChecklistItems, deleteChecklistItem, setChecklistDone, watchChecklist,
   type ChecklistKind,
@@ -58,6 +59,7 @@ function addPackingPreset(): void {
 
 // AI import of a list someone else prepared; skips lines already present.
 const importOpen = ref(false)
+const templatesOpen = ref(false)
 const existingLines = computed(() => [...packing.value, ...todos.value].map((item) => item.text))
 
 const nameOf = (uid: string) => props.group.members[uid]?.nickname ?? t('common.unknown')
@@ -94,12 +96,14 @@ function clearQr(slot: QrSlot): void {
 
 <template>
   <div class="space-y-4 px-5 pb-28 pt-5">
+    <div class="flex justify-end"><button type="button" class="text-xs font-medium text-accent" @click="templatesOpen = true">{{ t('templates.title') }}</button></div>
+    <PackingTemplateSheet :open="templatesOpen" :uid="uid" :group-id="group.id" :items="packing" @close="templatesOpen = false" />
     <ChecklistCard
       :title="t('tools.packing')"
       :hint="t('tools.packingHint')"
       :items="packing"
       :preset-label="t('tools.packingPresetAction')"
-      :action-label="t('importList.action')"
+      :action-label="group.archived ? undefined : t('importList.action')"
       @add="add('packing', $event)"
       @toggle="toggle('packing', $event)"
       @remove="remove('packing', $event)"
@@ -120,6 +124,7 @@ function clearQr(slot: QrSlot): void {
       :title="t('tools.todos')"
       :hint="t('tools.todosHint')"
       :items="todos"
+      :readonly="group.archived"
       :name-of="group.memberIds.length > 1 ? nameOf : undefined"
       @add="add('todo', $event)"
       @toggle="toggle('todo', $event)"

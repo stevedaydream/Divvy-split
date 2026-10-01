@@ -11,7 +11,7 @@ import { APP_AUTHOR, REPO_URL } from '@/lib/appInfo'
  */
 const { locale } = useI18n()
 
-const EFFECTIVE = '2026-09-22'
+const EFFECTIVE = '2026-10-02'
 const ISSUES = `${REPO_URL}/issues`
 
 interface Section {
@@ -30,7 +30,8 @@ const zh: { title: string; intro: string; sections: Section[] } = {
         'Google 登入：你的 Google 帳號 ID、顯示名稱與 email，用來登入與建立個人檔案。',
         '個人檔案：暱稱、所屬國家、主要幣別，以及你選填的收款資訊（銀行名稱、帳號、LINE ID）。',
         '群組資料：群組名稱、目的地、旅行日期、成員，以及帳目、行程、共同待辦等你和成員輸入的內容。',
-        '行李清單：你自己的行李清單項目。',
+        '行李清單與範本：你自己的清單項目，以及你命名保存的範本文字。',
+        '個人旅行紀錄：你保存的目的地、旅行日期與行程副本，不包含群組成員的收款資料。',
       ],
     },
     {
@@ -39,7 +40,7 @@ const zh: { title: string; intro: string; sections: Section[] } = {
         '個人檔案（含 email）：只有你自己。',
         '暱稱與收款資訊：你所在群組的成員，方便他們還款給你。',
         '群組的帳目、行程與共同待辦：該群組的所有成員。',
-        '行李清單：只有你自己。',
+        '行李清單、行李範本、旅行紀錄與群組隱藏設定：只有你自己。',
         '邀請：寄件人與收件人看得到邀請內容（群組名稱與寄件人暱稱）。',
       ],
     },
@@ -70,7 +71,8 @@ const zh: { title: string; intro: string; sections: Section[] } = {
     {
       title: '保存與刪除',
       body: [
-        '資料會保存到你刪除為止。你可以隨時刪除自己記的帳目、行程項目與清單，也可以退出群組；群組建立者可以刪除整個群組，連同其中的帳目、行程與待辦。',
+        '資料會保存到你刪除為止。進行中的群組可以依編輯權限修改或刪除內容；建立者結清後可封存群組，封存期間帳本、行程與共同待辦僅供查閱。隱藏群組只改變你的列表，不會退出或移除歷史成員。',
+        '群組建立者可以刪除整個群組及其中的帳目、行程與待辦。個人的行李清單、行李範本與旅行紀錄獨立保存，刪除原群組不會刪除這些副本；你可以自行刪除範本與旅行紀錄。',
         '清除瀏覽器的網站資料，就會刪除只存在裝置上的資料。',
         `如果要刪除整個帳號與個人檔案，請到 GitHub 開一個 issue 提出（請不要在 issue 裡貼出 email 或其他個人資料），我們會在 issue 中說明後續的確認方式。`,
       ],
@@ -92,7 +94,8 @@ const en: typeof zh = {
         'Google sign-in: your Google account ID, display name and email, to sign you in and create your profile.',
         'Profile: nickname, home country, home currency and, if you add them, payment details (bank name, account number, LINE ID).',
         'Group data: group name, destination, trip dates, members, and the expenses, itinerary and shared to-dos you and other members enter.',
-        'Packing list: your own packing items.',
+        'Packing lists and templates: your own list items and the named templates you save.',
+        'Personal trip records: saved destinations, dates and itinerary copies, without group members’ payment details.',
       ],
     },
     {
@@ -101,7 +104,7 @@ const en: typeof zh = {
         'Your profile (including email): only you.',
         'Nickname and payment details: members of groups you are in, so they can pay you back.',
         "A group's expenses, itinerary and shared to-dos: everyone in that group.",
-        'Your packing list: only you.',
+        'Your packing lists, packing templates, trip records and group hiding preferences: only you.',
         'Invitations: the sender and the recipient (group name and sender nickname).',
       ],
     },
@@ -132,7 +135,8 @@ const en: typeof zh = {
     {
       title: 'Keeping and deleting data',
       body: [
-        'Data is kept until you delete it. You can delete your own expenses, plan items and list items at any time, or leave a group; a group\'s creator can delete the whole group with its expenses, plan and to-dos.',
+        'Data is kept until you delete it. Active groups can be edited according to permissions. Creators can archive settled groups; archived ledgers, itineraries and shared to-dos are read-only. Hiding a group changes only your list and preserves membership and historical balances.',
+        'Creators can delete a group with its expenses, plan and shared to-dos. Personal packing lists, packing templates and trip records are stored independently and survive deletion of the original group. You can delete your templates and trip records separately.',
         'Clearing the site data in your browser removes what is kept only on your device.',
         'To delete your whole account and profile, open an issue on GitHub (please do not post your email or other personal details there) and we will explain how to confirm the request.',
       ],

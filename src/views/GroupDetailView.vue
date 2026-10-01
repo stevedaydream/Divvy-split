@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, toRef, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { CircleCheck, HandCoins, Plus, Receipt, UserPlus } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
@@ -17,6 +18,7 @@ import InviteSheet from '@/components/group/InviteSheet.vue'
 import ItinerarySheet from '@/components/group/ItinerarySheet.vue'
 import MemberStrip from '@/components/group/MemberStrip.vue'
 import SettlementSheet from '@/components/group/SettlementSheet.vue'
+import TripCloseSheet from '@/components/group/TripCloseSheet.vue'
 import { useGroupDetail } from '@/composables/useGroupDetail'
 import { useConfirm } from '@/composables/useConfirm'
 import { useToast } from '@/composables/useToast'
@@ -27,6 +29,7 @@ import { placeLabel } from '@/data/countries'
 import { formatDay, todayIso } from '@/lib/dates'
 import { defaultTab, hasTripDates, tripPhase } from '@/lib/itinerary'
 import { formatNumber } from '@/lib/money'
+import { expensePayments } from '@/lib/expenseItems'
 import { useAuthStore } from '@/stores/auth'
 import { useRatesStore } from '@/stores/rates'
 import type { Entry, EntryCategory, ItineraryItem, ItineraryKind, Transfer } from '@/types/models'
@@ -38,8 +41,12 @@ const auth = useAuthStore()
 const rates = useRatesStore()
 const toast = useToast()
 const { confirm } = useConfirm()
+const route = useRoute()
+const closeSheetOpen = ref(false)
+const savingEntry = ref(false)
 
-const { group, entries, itinerary, balances, settlements, total, loading } = useGroupDetail(toRef(props, 'id'))
+const { group, entries, itinerary, balances, settlements, total, loading, error, loadingItinerary, itineraryError } = useGroupDetail(toRef(props, 'id'))
+const closeReady = computed(() => !loading.value && !loadingItinerary.value && !error.value && !itineraryError.value)
 
 const selectedMember = ref('all')
 const entrySheetOpen = ref(false)
@@ -63,6 +70,10 @@ watch(group, (next) => {
   if (tabChosen || !next) return
   tabChosen = true
   tab.value = defaultTab(tripPhase(next.startDate, next.endDate, todayIso()))
+  if (route.query.close === '1') closeSheetOpen.value = true
+})
+watch(() => group.value?.archived, (archived) => {
+  if (archived) { entrySheetOpen.value = false; itemSheetOpen.value = false; aiSheetOpen.value = false; inviteSheetOpen.value = false }
 })
 
 /** A group of one has nobody to settle with or filter by. */
@@ -86,7 +97,7 @@ const settleLabel = computed(() => {
 const visibleEntries = computed(() =>
   selectedMember.value === 'all'
     ? entries.value
-    : entries.value.filter((entry) => entry.payerId === selectedMember.value),
+    : entries.value.filter((entry) => entry.items?.length ? entry.items.some((item) => item.payerId === selectedMember.value) : entry.payerId === selectedMember.value),
 )
 
 /** The ledger split into days, each with its spending subtotal. */
@@ -99,12 +110,13 @@ const entryDays = computed(() => {
       days.push(day)
     }
     day.entries.push(entry)
-    if (entry.type === 'expense') day.subtotal += entry.groupAmountMinor
+    if (entry.type === 'expense') day.subtotal += selectedMember.value === 'all' ? entry.groupAmountMinor : (expensePayments(entry)[selectedMember.value] ?? 0)
   }
   return days
 })
 
 function openAdd(): void {
+  if (group.value?.archived) return
   editingEntry.value = null
   presetSettlement.value = null
   presetExpense.value = null
@@ -112,6 +124,7 @@ function openAdd(): void {
 }
 
 function openEdit(entry: Entry): void {
+  if (group.value?.archived) return
   editingEntry.value = entry
   presetSettlement.value = null
   presetExpense.value = null
@@ -119,6 +132,7 @@ function openEdit(entry: Entry): void {
 }
 
 function recordTransfer(transfer: Transfer): void {
+  if (group.value?.archived) return
   settleSheetOpen.value = false
   editingEntry.value = null
   presetExpense.value = null
@@ -128,6 +142,7 @@ function recordTransfer(transfer: Transfer): void {
 
 /** "Record" on a plan item: a new expense named after it, on its day. */
 function recordItem(item: ItineraryItem): void {
+  if (group.value?.archived) return
   editingEntry.value = null
   presetSettlement.value = null
   presetExpense.value = { title: item.title, date: item.date, category: item.category }
@@ -150,6 +165,7 @@ function defaultItemDate(): string {
 }
 
 function openAddItem(date = defaultItemDate(), kind: ItineraryKind = 'spot'): void {
+  if (group.value?.archived) return
   editingItem.value = null
   itemDate.value = date
   itemKind.value = kind
@@ -157,6 +173,7 @@ function openAddItem(date = defaultItemDate(), kind: ItineraryKind = 'spot'): vo
 }
 
 function openEditItem(item: ItineraryItem): void {
+  if (group.value?.archived) return
   editingItem.value = item
   itemSheetOpen.value = true
 }
@@ -214,7 +231,8 @@ function onFab(): void {
 
 async function save(draft: EntryDraft): Promise<void> {
   const uid = auth.uid
-  if (!uid) return
+  if (!uid || savingEntry.value || group.value?.archived) return
+  savingEntry.value = true
 
   try {
     if (editingEntry.value) await updateEntry(editingEntry.value.id, draft)
@@ -224,7 +242,7 @@ async function save(draft: EntryDraft): Promise<void> {
     toast.success(t('group.saved'))
   } catch {
     toast.error(t('common.somethingWrong'))
-  }
+  } finally { savingEntry.value = false }
 }
 
 async function remove(entry: Entry): Promise<void> {
@@ -248,6 +266,7 @@ async function remove(entry: Entry): Promise<void> {
 const inviteSheetOpen = ref(false)
 const aiSheetOpen = ref(false)
 function copyInvite(): void {
+  if (group.value?.archived) return
   inviteSheetOpen.value = true
 }
 </script>
@@ -287,6 +306,15 @@ function copyInvite(): void {
     </div>
 
     <template v-else-if="group">
+      <section class="space-y-2 border-b border-border px-5 py-3">
+        <p v-if="group.archived" class="text-xs text-muted">{{ t('travel.readonlyHint') }}</p>
+        <p v-else-if="group.endDate && group.endDate < todayIso()" class="text-xs text-muted">{{ t('travel.endHint') }}</p>
+        <p v-if="error || itineraryError" role="alert" class="text-xs text-negative">{{ t('common.somethingWrong') }}</p>
+        <div class="flex items-center justify-between gap-3">
+          <button type="button" class="text-xs font-medium text-accent" @click="closeSheetOpen = true">{{ t(group.archived ? 'travel.manageArchive' : group.ownerId === auth.uid ? 'travel.finish' : 'travel.saveRecord') }}</button>
+          <RouterLink :to="{ name: 'trips' }" class="text-xs text-muted">{{ t('travel.records') }}</RouterLink>
+        </div>
+      </section>
       <GroupStats
         v-if="tab === 'stats'"
         :group="group"
@@ -319,7 +347,7 @@ function copyInvite(): void {
         </p>
         <!-- A personal trip rarely needs inviting, so it stays a quiet link. -->
         <button
-          v-if="!shared"
+          v-if="!shared && !group.archived"
           class="mt-2 inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent"
           @click="copyInvite"
         >
@@ -329,7 +357,7 @@ function copyInvite(): void {
       </section>
 
       <!-- Labelled actions instead of bare top-bar icons, which people missed. -->
-      <section v-if="shared" class="grid grid-cols-2 gap-3 px-5 pb-6">
+      <section v-if="shared && !group.archived" class="grid grid-cols-2 gap-3 px-5 pb-6">
         <AppButton variant="secondary" @click="copyInvite">
           <template #icon><UserPlus class="size-4" /></template>
           {{ $t('invite.action') }}
@@ -378,7 +406,7 @@ function copyInvite(): void {
                 :group="group"
                 :currency="group.currency"
                 :locale="locale"
-                :can-edit="entry.createdBy === auth.uid"
+                :can-edit="entry.createdBy === auth.uid && !group.archived"
                 @edit="openEdit(entry)"
                 @remove="remove(entry)"
               />
@@ -389,7 +417,7 @@ function copyInvite(): void {
       </template>
 
       <button
-        v-if="tab !== 'tools'"
+        v-if="tab !== 'tools' && !group.archived"
         class="fixed bottom-6 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
         :aria-label="tab === 'itinerary' ? $t('itinerary.addSpot') : $t('group.addExpense')"
         @click="onFab"
@@ -405,6 +433,7 @@ function copyInvite(): void {
         :preset-settlement="presetSettlement"
         :preset-expense="presetExpense"
         :locale="locale"
+        :saving="savingEntry"
         @close="entrySheetOpen = false"
         @save="save"
       />
@@ -419,6 +448,7 @@ function copyInvite(): void {
         @close="settleSheetOpen = false"
         @record="recordTransfer"
       />
+      <TripCloseSheet :open="closeSheetOpen" :group="group" :uid="auth.uid ?? ''" :items="itinerary" :unsettled="Object.values(balances).some((amount) => amount !== 0)" :ready="closeReady" @close="closeSheetOpen = false" @settle="settleSheetOpen = true" />
 
       <AiGuideSheet
         :open="aiSheetOpen"

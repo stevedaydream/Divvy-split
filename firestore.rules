@@ -1,5 +1,4 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -11,6 +10,24 @@ service cloud.firestore {
       return signedIn() && request.auth.uid == uid;
     }
 
+    function groupData(groupId) {
+      return get(/databases/$(database)/documents/groups/$(groupId)).data;
+    }
+
+    function activeGroup(groupId) {
+      let data = groupData(groupId);
+      return signedIn() && request.auth.uid in data.memberIds
+        && data.archived == false && data.get('deleting', false) == false;
+    }
+
+    function revisionChanged(groupId, field) {
+      let before = groupData(groupId);
+      let after = getAfter(/databases/$(database)/documents/groups/$(groupId)).data;
+      return activeGroup(groupId) && after.archived == false
+        && after.get('deleting', false) == false
+        && after.get(field, 0) == before.get(field, 0) + 1;
+    }
+
     // --- users -------------------------------------------------------------
     // A profile (email, bank account, LINE ID) is readable only by its owner.
     // Group members see nickname and payment details through the copy
@@ -19,6 +36,29 @@ service cloud.firestore {
       allow read: if isSelf(uid);
       allow create, update: if isSelf(uid);
       allow delete: if isSelf(uid);
+
+      match /trips/{tripId} {
+        allow read, delete: if isSelf(uid);
+        allow create, update: if isSelf(uid)
+          && request.resource.data.name is string
+          && request.resource.data.items is list;
+      }
+
+      match /packingTemplates/{templateId} {
+        allow read, delete: if isSelf(uid);
+        allow create, update: if isSelf(uid)
+          && request.resource.data.name is string
+          && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+          && request.resource.data.texts is list
+          && request.resource.data.texts.size() > 0 && request.resource.data.texts.size() <= 450;
+      }
+
+      match /groupPreferences/{groupId} {
+        allow read, delete: if isSelf(uid);
+        allow create, update: if isSelf(uid)
+          && request.resource.data.keys().hasOnly(['hidden'])
+          && request.resource.data.hidden is bool;
+      }
 
       // Personal packing list, one per trip. Only its owner can see it —
       // unlike the profile above, nobody else needs to.
@@ -55,6 +95,7 @@ service cloud.firestore {
         let before = resource.data;
         let after = request.resource.data;
         return signedIn()
+          && before.archived == false && before.get('deleting', false) == false
           && !(request.auth.uid in before.memberIds)
           && after.joinCode == before.inviteCode
           && after.memberIds.hasAll(before.memberIds)
@@ -66,19 +107,9 @@ service cloud.firestore {
           && after.location == before.location
           && after.ownerId == before.ownerId
           && after.inviteCode == before.inviteCode
-          && after.archived == before.archived;
-      }
-
-      // Leaving removes only yourself, and only if you are not the owner.
-      function isValidLeave() {
-        let before = resource.data;
-        let after = request.resource.data;
-        return isMember()
-          && request.auth.uid != before.ownerId
-          && !(request.auth.uid in after.memberIds)
-          && before.memberIds.hasAll(after.memberIds)
-          && after.ownerId == before.ownerId
-          && after.currency == before.currency;
+          && after.archived == before.archived
+          && after.diff(before).affectedKeys().hasOnly(['memberIds', 'members', 'joinCode', 'updatedAt'])
+          && after.members.diff(before.members).affectedKeys().hasOnly([request.auth.uid]);
       }
 
       // A member may edit shared fields and their own denormalised profile,
@@ -90,7 +121,40 @@ service cloud.firestore {
           && after.memberIds == before.memberIds
           && after.ownerId == before.ownerId
           && after.currency == before.currency
-          && (after.inviteCode == before.inviteCode || isOwner());
+          && after.archived == before.archived
+          && after.get('deleting', false) == before.get('deleting', false)
+          && (after.inviteCode == before.inviteCode || (isOwner() && !before.archived))
+          && after.diff(before).affectedKeys().hasOnly(['name', 'destination', 'location', 'startDate', 'endDate', 'members', 'inviteCode', 'updatedAt', 'ledgerRevision', 'planRevision'])
+          && after.members.diff(before.members).affectedKeys().hasOnly([request.auth.uid])
+          && (before.archived == false && before.get('deleting', false) == false
+            || after.diff(before).affectedKeys().hasOnly(['members']))
+          && (after.get('ledgerRevision', 0) == before.get('ledgerRevision', 0)
+            || after.get('ledgerRevision', 0) == before.get('ledgerRevision', 0) + 1)
+          && (after.get('planRevision', 0) == before.get('planRevision', 0)
+            || after.get('planRevision', 0) == before.get('planRevision', 0) + 1);
+      }
+
+      function isRevisionEdit() {
+        let before = resource.data;
+        let after = request.resource.data;
+        return isMember() && !before.archived && !before.get('deleting', false)
+          && after.diff(before).affectedKeys().hasOnly(['ledgerRevision', 'planRevision', 'updatedAt'])
+          && (after.get('ledgerRevision', 0) == before.get('ledgerRevision', 0)
+            || after.get('ledgerRevision', 0) == before.get('ledgerRevision', 0) + 1)
+          && (after.get('planRevision', 0) == before.get('planRevision', 0)
+            || after.get('planRevision', 0) == before.get('planRevision', 0) + 1);
+      }
+
+      function isLifecycleEdit() {
+        return isOwner() && resource.data.get('deleting', false) == false
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['archived', 'updatedAt'])
+          && request.resource.data.archived is bool;
+      }
+
+      function isDeleteStart() {
+        return isOwner()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deleting', 'updatedAt'])
+          && request.resource.data.deleting == true;
       }
 
       allow read: if isMember();
@@ -101,7 +165,7 @@ service cloud.firestore {
         && request.resource.data.inviteCode is string
         && request.resource.data.inviteCode.size() >= 8;
 
-      allow update: if isMemberEdit() || isValidJoin() || isValidLeave();
+      allow update: if isRevisionEdit() || isMemberEdit() || isValidJoin() || isLifecycleEdit() || isDeleteStart();
 
       allow delete: if isOwner();
 
@@ -131,9 +195,14 @@ service cloud.firestore {
         }
 
         allow read: if isGroupMember();
-        allow create, update: if isGroupMember() && validItem(request.resource.data);
+        allow create: if validItem(request.resource.data)
+          && (revisionChanged(groupId, 'planRevision')
+            || (!exists(/databases/$(database)/documents/groups/$(groupId))
+              && getAfter(/databases/$(database)/documents/groups/$(groupId)).data.ownerId == request.auth.uid));
+        allow update: if revisionChanged(groupId, 'planRevision') && validItem(request.resource.data);
         // The owner also clears the plan when deleting the whole group.
-        allow delete: if isGroupMember();
+        allow delete: if revisionChanged(groupId, 'planRevision')
+          || (signedIn() && group().ownerId == request.auth.uid && group().get('deleting', false) == true);
       }
 
       // --- shared to-dos -----------------------------------------------------
@@ -143,8 +212,10 @@ service cloud.firestore {
             && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberIds;
         }
 
-        allow read, delete: if isTodoMember();
-        allow create, update: if isTodoMember()
+        allow read: if isTodoMember();
+        allow delete: if activeGroup(groupId)
+          || (signedIn() && groupData(groupId).ownerId == request.auth.uid && groupData(groupId).get('deleting', false) == true);
+        allow create, update: if activeGroup(groupId)
           && request.resource.data.text is string
           && request.resource.data.text.size() > 0
           && request.resource.data.text.size() <= 120
@@ -169,6 +240,7 @@ service cloud.firestore {
           && data.toUid is string && data.toUid != request.auth.uid
           && invitationId == data.groupId + '_' + data.toUid
           && request.auth.uid in group.memberIds
+          && group.archived == false && group.get('deleting', false) == false
           && !(data.toUid in group.memberIds)
           && data.inviteCode == group.inviteCode
           && data.status == 'pending';
@@ -213,24 +285,66 @@ service cloud.firestore {
 
       allow read: if memberOfGroup(resource.data.groupId);
 
-      allow create: if memberOfGroup(request.resource.data.groupId)
+
+      // 無效明細回傳無法被合法金額抵銷的負值，以便同時驗證並加總。
+      function itemAmount(item, members) {
+        let amount = item.amountMinor;
+        let ids = item.participantIds;
+        return amount is int && amount > 0 && amount <= 1000000000000
+          && item.payerId in members && ids.size() > 0
+          && ids.hasOnly(members) ? amount : -1000000000000000;
+      }
+
+      function validExpense(data) {
+        let members = groupOf(data.groupId).memberIds;
+        return data.type in ['expense', 'settlement']
+          && data.amountMinor is int && data.amountMinor > 0 && data.amountMinor <= 1000000000000
+          && data.groupAmountMinor is int && data.groupAmountMinor >= 0
+          && data.payerId in members
+          && data.participantIds is list && data.participantIds.size() > 0
+          && data.participantIds.toSet().size() == data.participantIds.size()
+          && data.participantIds.hasOnly(members)
+          && (data.type != 'settlement'
+            || (data.participantIds.size() == 1 && data.participantIds[0] != data.payerId))
+          && (!('items' in data) || (data.items is list && (data.items.size() == 0
+            || (data.type == 'expense' && data.items.size() <= 12
+              && data.amountMinor == (data.items.size() > 0 ? itemAmount(data.items[0], members) : 0)
+          + (data.items.size() > 1 ? itemAmount(data.items[1], members) : 0)
+          + (data.items.size() > 2 ? itemAmount(data.items[2], members) : 0)
+          + (data.items.size() > 3 ? itemAmount(data.items[3], members) : 0)
+          + (data.items.size() > 4 ? itemAmount(data.items[4], members) : 0)
+          + (data.items.size() > 5 ? itemAmount(data.items[5], members) : 0)
+          + (data.items.size() > 6 ? itemAmount(data.items[6], members) : 0)
+          + (data.items.size() > 7 ? itemAmount(data.items[7], members) : 0)
+          + (data.items.size() > 8 ? itemAmount(data.items[8], members) : 0)
+          + (data.items.size() > 9 ? itemAmount(data.items[9], members) : 0)
+          + (data.items.size() > 10 ? itemAmount(data.items[10], members) : 0)
+          + (data.items.size() > 11 ? itemAmount(data.items[11], members) : 0)))));
+      }
+
+      allow create: if revisionChanged(request.resource.data.groupId, 'ledgerRevision')
         && request.resource.data.createdBy == request.auth.uid
         && request.resource.data.payerId == request.auth.uid
         && request.resource.data.amountMinor is int
         && request.resource.data.groupAmountMinor is int
+        && validExpense(request.resource.data)
         && validDetails(request.resource.data);
 
       // Only the person who filed an entry may change or remove it, and it
       // can never be moved into a different group.
       allow update: if resource.data.createdBy == request.auth.uid
+        && revisionChanged(resource.data.groupId, 'ledgerRevision')
         && request.resource.data.groupId == resource.data.groupId
         && request.resource.data.createdBy == resource.data.createdBy
+        && validExpense(request.resource.data)
         && validDetails(request.resource.data);
 
       // The group owner may also remove entries, which deleting the whole
       // group requires; otherwise other members' entries would block it.
-      allow delete: if resource.data.createdBy == request.auth.uid
-        || (signedIn() && groupOf(resource.data.groupId).ownerId == request.auth.uid);
+      allow delete: if (signedIn() && resource.data.createdBy == request.auth.uid
+          && revisionChanged(resource.data.groupId, 'ledgerRevision'))
+        || (signedIn() && groupOf(resource.data.groupId).ownerId == request.auth.uid
+          && groupOf(resource.data.groupId).get('deleting', false) == true);
     }
   }
 }

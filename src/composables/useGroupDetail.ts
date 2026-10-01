@@ -17,6 +17,8 @@ export function useGroupDetail(groupId: Ref<string>) {
   const itinerary = ref<ItineraryItem[]>([])
   const loadingGroup = ref(true)
   const loadingEntries = ref(true)
+  const loadingItinerary = ref(true)
+  const itineraryError = ref<string | null>(null)
   const error = ref<string | null>(null)
 
   let stopGroup: (() => void) | null = null
@@ -40,6 +42,10 @@ export function useGroupDetail(groupId: Ref<string>) {
 
       loadingGroup.value = true
       loadingEntries.value = true
+      loadingItinerary.value = true
+      itineraryError.value = null
+      group.value = null
+      entries.value = []
       error.value = null
 
       stopGroup = watchGroup(
@@ -70,7 +76,8 @@ export function useGroupDetail(groupId: Ref<string>) {
       itinerary.value = []
       stopItinerary = watchItinerary(id, (next) => {
         itinerary.value = next
-      })
+        loadingItinerary.value = false
+      }, (cause) => { itineraryError.value = cause.message; loadingItinerary.value = false })
     },
     { immediate: true },
   )
@@ -83,5 +90,5 @@ export function useGroupDetail(groupId: Ref<string>) {
   const total = computed(() => totalSpend(entries.value))
   const loading = computed(() => loadingGroup.value || loadingEntries.value)
 
-  return { group, entries, itinerary, balances, settlements, total, loading, error }
+  return { group, entries, itinerary, balances, settlements, total, loading, error, loadingItinerary, itineraryError }
 }

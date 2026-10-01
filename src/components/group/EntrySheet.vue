@@ -6,6 +6,9 @@ import AppInput from '@/components/ui/AppInput.vue'
 import AppSheet from '@/components/ui/AppSheet.vue'
 import AmountInput from '@/components/currency/AmountInput.vue'
 import CurrencyPicker from '@/components/currency/CurrencyPicker.vue'
+import ExpenseItemEditor from '@/components/group/ExpenseItemEditor.vue'
+import { expensePayments, validExpenseItems, type ExpenseItemInput } from '@/lib/expenseItems'
+import { expenseShares } from '@/lib/settlement'
 import { CATEGORIES, guessCategory } from '@/data/categories'
 import { addDays, todayIso } from '@/lib/dates'
 import { lineProfileUrl } from '@/lib/line'
@@ -30,6 +33,7 @@ const props = defineProps<{
   /** Pre-fills a new expense, e.g. from an itinerary item's "record" shortcut. */
   presetExpense?: { title: string; date: string; category: EntryCategory } | null
   locale: string
+  saving?: boolean
 }>()
 
 const emit = defineEmits<{ close: []; save: [draft: EntryDraft] }>()
@@ -49,6 +53,21 @@ const note = ref('')
 const date = ref(todayIso())
 const pickerOpen = ref(false)
 const error = ref('')
+const itemized = ref(false)
+const itemInputs = ref<ExpenseItemInput[]>([])
+const allowTotalChange = ref(false)
+const payer = ref(props.uid)
+const draftItems = computed(() => itemInputs.value.map((item) => ({ title: item.title.trim(), amountMinor: toMinor(Number(item.amount), currency.value), payerId: item.payerId, participantIds: [...item.participantIds] })))
+const itemsTotal = computed(() => draftItems.value.reduce((sum, item) => sum + item.amountMinor, 0))
+
+watch([itemsTotal, itemized, tab, currency], () => {
+  if (itemized.value && tab.value === 'expense') amount.value = String(toMajor(itemsTotal.value, currency.value))
+})
+
+function enableItems(): void {
+  itemInputs.value = [{ key: 0, title: title.value, amount: amount.value, payerId: payer.value, participantIds: [...participants.value] }]
+  itemized.value = true
+}
 
 /** Once the user picks a category, typing the title stops re-guessing it. */
 const categoryTouched = ref(false)
@@ -109,6 +128,14 @@ const convertedMinor = computed(() =>
   activePin.value?.groupMinor ??
   convertMinor(toMinor(amount.value, currency.value), currency.value, props.group.currency, effectiveRate.value),
 )
+
+const itemSummary = computed(() => {
+  if (!itemized.value || !validExpenseItems(draftItems.value, itemsTotal.value, props.group.memberIds)) return []
+  const entry = { items: draftItems.value, payerId: payer.value, participantIds: participants.value, groupAmountMinor: convertedMinor.value }
+  const shares = expenseShares(entry, new Set(props.group.memberIds))
+  const paid = expensePayments(entry)
+  return props.group.memberIds.filter((uid) => shares[uid] || paid[uid]).map((uid) => ({ uid, share: shares[uid] ?? 0, paid: paid[uid] ?? 0 }))
+})
 
 const recipientLineId = computed(() => {
   if (!recipient.value) return ''
@@ -181,6 +208,10 @@ watch(
     previewOpen.value = false
     pinned.value = null
     method.value = props.entry?.method ?? null
+    allowTotalChange.value = false
+    itemized.value = false
+    itemInputs.value = []
+    payer.value = props.entry?.payerId ?? props.uid
 
     const entry = props.entry
     if (entry) {
@@ -195,6 +226,8 @@ watch(
       participants.value = entry.type === 'expense' ? [...entry.participantIds] : []
       recipient.value = entry.type === 'settlement' ? (entry.participantIds[0] ?? null) : null
       originalRate.value = entry.rate
+      itemInputs.value = (entry.items ?? []).map((item, index) => ({ key: index, title: item.title, amount: String(toMajor(item.amountMinor, entry.currency)), payerId: item.payerId, participantIds: [...item.participantIds] }))
+      itemized.value = !!entry.items?.length
       return
     }
 
@@ -216,7 +249,7 @@ watch(
       tab.value = 'expense'
       recipient.value = null
       amount.value = ''
-      participants.value = [...props.group.memberIds]
+      participants.value = [props.uid]
 
       const expense = props.presetExpense
       if (expense) {
@@ -244,6 +277,7 @@ function toggleAll(): void {
 const justMe = computed(() => participants.value.length === 1 && participants.value[0] === props.uid)
 
 function submit(): void {
+  if (props.saving) return
   const amountMinor = toMinor(amount.value, currency.value)
   if (amountMinor <= 0) {
     error.value = t('group.amountRequired')
@@ -255,8 +289,22 @@ function submit(): void {
     error.value = t('settle.payTo')
     return
   }
-  if (!isSettlement && participants.value.length === 0) {
+  if (!isSettlement && !itemized.value && participants.value.length === 0) {
     error.value = t('group.splitNobody')
+    return
+  }
+  if (!isSettlement && itemized.value) {
+    if (!validExpenseItems(draftItems.value, amountMinor, props.group.memberIds)) {
+      error.value = t('itemized.invalid')
+      return
+    }
+    if (props.entry && (amountMinor !== props.entry.amountMinor || currency.value !== props.entry.currency) && !allowTotalChange.value) {
+      error.value = t('itemized.confirmTotal')
+      return
+    }
+  }
+  if (currency.value !== props.group.currency && (!effectiveRate.value || effectiveRate.value <= 0)) {
+    error.value = t('currency.unavailable')
     return
   }
   if (!date.value) {
@@ -271,8 +319,9 @@ function submit(): void {
     groupId: props.group.id,
     type: tab.value,
     title: isSettlement ? t('group.settlement') : title.value.trim() || t('group.expense'),
-    payerId: props.uid,
-    participantIds: isSettlement ? [recipient.value!] : [...participants.value],
+    payerId: payer.value,
+    participantIds: isSettlement ? [recipient.value!] : itemized.value ? [...new Set(draftItems.value.flatMap((item) => item.participantIds))] : [...participants.value],
+    items: !isSettlement && itemized.value ? draftItems.value : [],
     amountMinor,
     currency: currency.value,
     rate: effectiveRate.value,
@@ -304,10 +353,16 @@ function submit(): void {
     </div>
 
     <AmountInput
+      v-if="!itemized || tab !== 'expense'"
       v-model="amount"
       :currency="currency"
       @pick-currency="pickerOpen = true"
     />
+    <div v-else class="text-center">
+      <p class="text-xs text-muted">{{ t('itemized.total') }}</p>
+      <p class="tabular mt-1 text-3xl font-semibold">{{ formatNumber(itemsTotal, currency, locale) }}</p>
+      <button type="button" class="mt-1 text-sm text-accent" @click="pickerOpen = true">{{ currency }}</button>
+    </div>
 
     <p v-if="showConversion" class="mt-2 text-center text-xs text-muted">
       {{ t('group.converts', {
@@ -339,6 +394,20 @@ function submit(): void {
 
     <div v-if="tab === 'expense'" class="mt-6 space-y-6">
       <AppInput v-model="title" :placeholder="t('group.whatPlaceholder')" />
+      <AppButton v-if="!itemized" variant="secondary" block @click="enableItems">{{ t('itemized.enable') }}</AppButton>
+      <template v-else>
+        <ExpenseItemEditor v-model="itemInputs" :group="group" :uid="uid" />
+        <section v-if="itemSummary.length" class="rounded-xl border border-border p-3">
+          <h3 class="mb-2 text-xs font-medium text-muted">{{ t('itemized.summary') }} · {{ group.currency }}</h3>
+          <div v-for="person in itemSummary" :key="person.uid" class="flex justify-between gap-3 py-1 text-xs">
+            <span>{{ group.members[person.uid]?.nickname }}</span>
+            <span class="tabular text-muted">{{ t('itemized.personSummary', { share: formatNumber(person.share, group.currency, locale), paid: formatNumber(person.paid, group.currency, locale) }) }}</span>
+          </div>
+        </section>
+        <label v-if="entry && (toMinor(amount, currency) !== entry.amountMinor || currency !== entry.currency)" class="flex items-start gap-2 text-xs text-muted">
+          <input v-model="allowTotalChange" type="checkbox" class="mt-0.5 accent-accent" />{{ t('itemized.confirmTotal') }}
+        </label>
+      </template>
 
       <section>
         <h3 class="mb-2 text-xs font-medium text-muted">{{ t('group.category') }}</h3>
@@ -368,7 +437,7 @@ function submit(): void {
         />
       </section>
 
-      <section v-if="group.memberIds.length > 1">
+      <section v-if="group.memberIds.length > 1 && !itemized">
         <div class="mb-2 flex items-center justify-between">
           <h3 class="text-xs font-medium text-muted">{{ t('group.splitWith') }}</h3>
           <div class="flex gap-3">
@@ -493,7 +562,7 @@ function submit(): void {
     <template #footer>
       <div class="grid grid-cols-2 gap-3">
         <AppButton variant="secondary" @click="emit('close')">{{ t('common.cancel') }}</AppButton>
-        <AppButton @click="submit">{{ t('common.save') }}</AppButton>
+        <AppButton :loading="saving" @click="submit">{{ t('common.save') }}</AppButton>
       </div>
     </template>
 

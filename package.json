@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:emulators": "firebase emulators:exec --config firebase.emulators.json --only auth,firestore --project demo-divvy \"node tests/run-emulator-tests.mjs\""
   },
   "dependencies": {
     "chart.js": "^4.5.1",

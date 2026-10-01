@@ -29,6 +29,7 @@ const hasDates = computed(() => hasTripDates(props.group.startDate, props.group.
 const layout = computed(() => layoutDays(props.items, props.group.startDate, props.group.endDate))
 const estimate = computed(() => totalEstimate(props.items))
 const today = todayIso()
+const readonly = computed(() => props.group.archived)
 
 /** Flights and stays at a glance, above the day-by-day plan. */
 const logistics = computed(() =>
@@ -62,7 +63,7 @@ function saveDates(): void {
 
 <template>
   <div class="space-y-5 px-5 pb-28 pt-5">
-    <section v-if="!hasDates" class="rounded-card border border-border bg-surface p-5 shadow-card">
+    <section v-if="!hasDates && !readonly" class="rounded-card border border-border bg-surface p-5 shadow-card">
       <div class="flex items-center gap-2">
         <CalendarDays class="size-4 text-accent" />
         <h2 class="text-sm font-semibold">{{ t('itinerary.setDatesTitle') }}</h2>
@@ -100,6 +101,7 @@ function saveDates(): void {
           </p>
         </div>
         <button
+          v-if="!readonly"
           class="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-accent/40 bg-accent-soft px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:border-accent"
           @click="emit('ai')"
         >
@@ -111,7 +113,7 @@ function saveDates(): void {
       <section class="rounded-card border border-border bg-surface p-4 shadow-card">
         <header class="mb-2 flex items-center justify-between">
           <h2 class="text-xs font-medium text-muted">{{ t('itinerary.logistics') }}</h2>
-          <div class="flex gap-3">
+          <div v-if="!readonly" class="flex gap-3">
             <button class="text-xs font-medium text-accent" @click="emit('add', group.startDate, 'flight')">
               + {{ t('itinerary.kind.flight') }}
             </button>
@@ -123,7 +125,7 @@ function saveDates(): void {
         <p v-if="!logistics.length" class="py-2 text-xs text-faint">{{ t('itinerary.noLogistics') }}</p>
         <ul v-else class="divide-y divide-border">
           <li v-for="item in logistics" :key="item.id">
-            <button class="flex w-full items-center gap-3 py-2.5 text-left" @click="emit('edit', item)">
+            <button :disabled="readonly" class="flex w-full items-center gap-3 py-2.5 text-left" @click="emit('edit', item)">
               <component :is="KIND_ICON[item.kind]" class="size-4 shrink-0 text-muted" />
               <span class="min-w-0 flex-1">
                 <span class="block truncate text-sm font-medium">{{ item.title }}</span>
@@ -159,7 +161,7 @@ function saveDates(): void {
             <span class="tabular w-11 shrink-0 pt-0.5 text-xs font-medium text-muted">
               {{ item.time || t('itinerary.allDay') }}
             </span>
-            <button class="min-w-0 flex-1 text-left" @click="emit('edit', item)">
+            <button :disabled="readonly" class="min-w-0 flex-1 text-left" @click="emit('edit', item)">
               <span class="flex items-center gap-1.5">
                 <span aria-hidden="true">{{ item.kind === 'spot' ? categoryEmoji(item.category) : '' }}</span>
                 <component v-if="item.kind !== 'spot'" :is="KIND_ICON[item.kind]" class="size-3.5 text-muted" />
@@ -168,9 +170,9 @@ function saveDates(): void {
               <span v-if="item.note" class="mt-0.5 block text-xs text-muted">{{ item.note }}</span>
               <span class="mt-1 block text-[11px] text-faint">
                 <template v-if="item.estimateMinor">
-                  {{ t('stats.estimated') }} {{ money(item.estimateMinor) }} ·
+                  {{ t('stats.estimated') }} {{ money(item.estimateMinor) }}<template v-if="!readonly"> · </template>
                 </template>
-                {{ t('itinerary.editedBy', { name: editorName(item) }) }}
+                <template v-if="!readonly">{{ t('itinerary.editedBy', { name: editorName(item) }) }}</template>
               </span>
             </button>
             <div class="flex shrink-0 gap-0.5">
@@ -184,6 +186,7 @@ function saveDates(): void {
                 <MapPin class="size-4" />
               </a>
               <button
+                v-if="!readonly"
                 class="grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-accent-soft hover:text-accent"
                 :aria-label="t('itinerary.record')"
                 :title="t('itinerary.record')"
@@ -195,6 +198,7 @@ function saveDates(): void {
           </article>
 
           <button
+            v-if="!readonly"
             class="flex w-full items-center justify-center gap-1.5 rounded-card border border-dashed border-border py-2.5 text-xs text-muted transition-colors hover:border-accent hover:text-accent"
             @click="emit('add', day.date, 'spot')"
           >
@@ -220,7 +224,7 @@ function saveDates(): void {
       <p v-if="hasDates" class="mt-1 text-xs text-muted">{{ t('itinerary.outsideHint') }}</p>
       <ul class="mt-3 space-y-1.5">
         <li v-for="item in layout.outside" :key="item.id">
-          <button class="flex w-full items-center justify-between gap-3 text-left text-sm" @click="emit('edit', item)">
+          <button :disabled="readonly" class="flex w-full items-center justify-between gap-3 text-left text-sm" @click="emit('edit', item)">
             <span class="truncate">{{ item.title }}</span>
             <span class="tabular shrink-0 text-xs text-muted">{{ formatDay(item.date, locale) }}</span>
           </button>

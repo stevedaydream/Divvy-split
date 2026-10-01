@@ -11,6 +11,7 @@ const router = createRouter({
     { path: '/onboarding', name: 'onboarding', component: () => import('@/views/OnboardingView.vue') },
     { path: '/groups', name: 'groups', component: () => import('@/views/GroupsView.vue') },
     { path: '/groups/:id', name: 'group', component: () => import('@/views/GroupDetailView.vue'), props: true },
+    { path: '/trips', name: 'trips', component: () => import('@/views/TripRecordsView.vue') },
     { path: '/calculator', name: 'calculator', component: () => import('@/views/CalculatorView.vue') },
     { path: '/profile', name: 'profile', component: () => import('@/views/ProfileView.vue') },
     { path: '/:pathMatch(.*)*', redirect: '/groups' },

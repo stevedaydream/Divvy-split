@@ -1,4 +1,5 @@
 import type { Entry, Transfer } from '@/types/models'
+import { expenseParts } from './expenseItems'
 
 /**
  * Splitting and settlement maths — deliberately free of Vue, Firestore and
@@ -36,24 +37,24 @@ export function computeBalances(entries: Entry[], memberIds: string[]): Balances
   for (const entry of entries) {
     const amount = entry.groupAmountMinor
     if (!Number.isFinite(amount) || amount === 0) continue
-    if (!known.has(entry.payerId)) continue
-
     if (entry.type === 'settlement') {
       // A transfer: the payer discharges debt, the recipient's credit shrinks.
       const recipient = entry.participantIds[0]
-      if (!recipient || !known.has(recipient)) continue
+      if (!known.has(entry.payerId) || !recipient || !known.has(recipient)) continue
       balances[entry.payerId] = (balances[entry.payerId] ?? 0) + amount
       balances[recipient] = (balances[recipient] ?? 0) - amount
       continue
     }
 
     // An expense: the payer fronted the money, participants each owe a share.
-    const shares = expenseShares(entry, known)
-    if (Object.keys(shares).length === 0) continue
-
-    balances[entry.payerId] = (balances[entry.payerId] ?? 0) + amount
-    for (const [uid, share] of Object.entries(shares)) {
-      balances[uid] = (balances[uid] ?? 0) - share
+    for (const part of expenseParts(entry)) {
+      if (!known.has(part.payerId)) continue
+      const shares = partShares(part.participantIds, part.amountMinor, known)
+      if (!Object.keys(shares).length) continue
+      balances[part.payerId] = (balances[part.payerId] ?? 0) + part.amountMinor
+      for (const [uid, share] of Object.entries(shares)) {
+        balances[uid] = (balances[uid] ?? 0) - share
+      }
     }
   }
 
@@ -65,9 +66,20 @@ export function computeBalances(entries: Entry[], memberIds: string[]): Balances
  * splitting so the remainder always lands on the same people — balances and
  * per-person spending statistics therefore agree to the last minor unit.
  */
-export function expenseShares(entry: Entry, members: Set<string>): Record<string, number> {
-  const ordered = entry.participantIds.filter((uid) => members.has(uid)).sort()
-  const shares = splitEvenly(entry.groupAmountMinor, ordered.length)
+export function expenseShares(entry: Pick<Entry, 'items' | 'payerId' | 'participantIds' | 'groupAmountMinor'>, members: Set<string>): Record<string, number> {
+  const result: Record<string, number> = {}
+  for (const part of expenseParts(entry)) {
+    if (!members.has(part.payerId)) continue
+    for (const [uid, amount] of Object.entries(partShares(part.participantIds, part.amountMinor, members))) {
+      result[uid] = (result[uid] ?? 0) + amount
+    }
+  }
+  return result
+}
+
+function partShares(participantIds: string[], amountMinor: number, members: Set<string>): Record<string, number> {
+  const ordered = [...new Set(participantIds)].filter((uid) => members.has(uid)).sort()
+  const shares = splitEvenly(amountMinor, ordered.length)
   const result: Record<string, number> = {}
   ordered.forEach((uid, i) => {
     result[uid] = shares[i] ?? 0

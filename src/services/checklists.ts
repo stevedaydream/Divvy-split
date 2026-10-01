@@ -50,6 +50,7 @@ export async function addChecklistItems(
   uid: string,
   texts: string[],
 ): Promise<void> {
+  if (texts.length > 450) throw new Error('too-many-items')
   const ref = listRef(kind, groupId, uid)
   const batch = writeBatch(db)
   for (const text of texts) {

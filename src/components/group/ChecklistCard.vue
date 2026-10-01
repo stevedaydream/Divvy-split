@@ -14,6 +14,7 @@ const props = defineProps<{
   presetLabel?: string
   /** Optional AI action in the header, e.g. importing someone else's list. */
   actionLabel?: string
+  readonly?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -43,7 +44,7 @@ function submit(): void {
       <span class="flex items-center gap-3">
         <span v-if="items.length" class="tabular text-xs text-muted">{{ done }} / {{ items.length }}</span>
         <button
-          v-if="actionLabel"
+          v-if="actionLabel && !readonly"
           class="inline-flex items-center gap-1 text-xs font-medium text-accent"
           @click="emit('action')"
         >
@@ -59,6 +60,7 @@ function submit(): void {
           class="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1.5 text-left"
           role="checkbox"
           :aria-checked="item.done"
+          :disabled="readonly"
           @click="emit('toggle', item)"
         >
           <span
@@ -77,6 +79,7 @@ function submit(): void {
           </span>
         </button>
         <button
+          v-if="!readonly"
           class="grid size-7 shrink-0 place-items-center rounded-full text-faint transition-colors hover:bg-negative-soft hover:text-negative"
           :aria-label="t('common.delete')"
           @click="emit('remove', item)"
@@ -87,14 +90,14 @@ function submit(): void {
     </ul>
 
     <button
-      v-else-if="presetLabel"
+      v-else-if="presetLabel && !readonly"
       class="mt-3 w-full rounded-lg border border-dashed border-border py-2 text-xs text-muted transition-colors hover:border-accent hover:text-accent"
       @click="emit('preset')"
     >
       {{ presetLabel }}
     </button>
 
-    <form class="mt-3 flex gap-2" @submit.prevent="submit">
+    <form v-if="!readonly" class="mt-3 flex gap-2" @submit.prevent="submit">
       <input
         v-model="draft"
         maxlength="120"

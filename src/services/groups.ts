@@ -1,5 +1,5 @@
 import {
-  addDoc, arrayRemove, arrayUnion, collection, deleteDoc, deleteField, doc, getDoc, getDocs,
+  addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs,
   onSnapshot, query, serverTimestamp, updateDoc, where, writeBatch,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
@@ -23,6 +23,8 @@ function toGroup(id: string, data: Record<string, unknown>): Group {
     members: (data.members as Record<string, GroupMember>) ?? {},
     inviteCode: (data.inviteCode as string) ?? '',
     archived: (data.archived as boolean) ?? false,
+    ledgerRevision: (data.ledgerRevision as number) ?? 0,
+    planRevision: (data.planRevision as number) ?? 0,
     createdAt: (data.createdAt as Group['createdAt']) ?? null,
     updatedAt: (data.updatedAt as Group['updatedAt']) ?? null,
   }
@@ -77,6 +79,8 @@ export async function createGroup(input: CreateGroupInput): Promise<string> {
     members: { [input.owner.uid]: input.owner.member },
     inviteCode: inviteCode(),
     archived: false,
+    ledgerRevision: 0,
+    planRevision: 0,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   })
@@ -86,7 +90,7 @@ export async function createGroup(input: CreateGroupInput): Promise<string> {
 /** The group currency is immutable once entries exist, so it is not editable. */
 export async function updateGroup(
   groupId: string,
-  patch: Pick<Partial<Group>, 'name' | 'destination' | 'location' | 'startDate' | 'endDate' | 'archived'>,
+  patch: Pick<Partial<Group>, 'name' | 'destination' | 'location' | 'startDate' | 'endDate'>,
 ): Promise<void> {
   await updateDoc(doc(db, COLLECTION, groupId), { ...patch, updatedAt: serverTimestamp() })
 }
@@ -140,16 +144,9 @@ export async function joinGroup(
   }
 }
 
-export async function leaveGroup(groupId: string, uid: string): Promise<void> {
-  await updateDoc(doc(db, COLLECTION, groupId), {
-    memberIds: arrayRemove(uid),
-    [`members.${uid}`]: deleteField(),
-    updatedAt: serverTimestamp(),
-  })
-}
-
 /** Removes the group and every entry filed against it. Owner only. */
 export async function deleteGroup(groupId: string): Promise<void> {
+  await updateDoc(doc(db, COLLECTION, groupId), { deleting: true, updatedAt: serverTimestamp() })
   const [entries, itinerary, todos] = await Promise.all([
     getDocs(query(collection(db, 'entries'), where('groupId', '==', groupId))),
     getDocs(collection(db, COLLECTION, groupId, 'itinerary')),

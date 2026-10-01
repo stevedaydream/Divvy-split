@@ -1,6 +1,7 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
 import { watchMyGroups } from '@/services/groups'
+import { watchHiddenGroups } from '@/services/groupPreferences'
 import type { Group } from '@/types/models'
 
 /**
@@ -14,20 +15,27 @@ export const useGroupsStore = defineStore('groups', () => {
   const groups = ref<Group[]>([])
   const loading = ref(true)
   const error = ref<string | null>(null)
+  const hiddenIds = ref<string[]>([])
 
   let unsubscribe: (() => void) | null = null
   let watchedUid: string | null = null
+  let stopHidden: (() => void) | null = null
 
-  const active = computed(() => groups.value.filter((g) => !g.archived))
+  const active = computed(() => groups.value.filter((g) => !g.archived && !hiddenIds.value.includes(g.id)))
+  const archived = computed(() => groups.value.filter((g) => g.archived && !hiddenIds.value.includes(g.id)))
+  const hidden = computed(() => groups.value.filter((g) => hiddenIds.value.includes(g.id)))
   const byId = computed(() => new Map(groups.value.map((g) => [g.id, g])))
 
   function subscribe(uid: string): void {
     if (watchedUid === uid && unsubscribe) return
     unsubscribe?.()
+    stopHidden?.()
+    hiddenIds.value = []
 
     watchedUid = uid
     loading.value = true
     error.value = null
+    stopHidden = watchHiddenGroups(uid, (ids) => { hiddenIds.value = ids }, (cause) => { error.value = cause.message })
 
     unsubscribe = watchMyGroups(
       uid,
@@ -44,6 +52,9 @@ export const useGroupsStore = defineStore('groups', () => {
 
   function reset(): void {
     unsubscribe?.()
+    stopHidden?.()
+    stopHidden = null
+    hiddenIds.value = []
     unsubscribe = null
     watchedUid = null
     groups.value = []
@@ -51,5 +62,5 @@ export const useGroupsStore = defineStore('groups', () => {
     error.value = null
   }
 
-  return { groups, loading, error, active, byId, subscribe, reset }
+  return { groups, loading, error, active, archived, hidden, byId, subscribe, reset }
 })

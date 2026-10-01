@@ -18,7 +18,8 @@ import CurrencyPicker from '@/components/currency/CurrencyPicker.vue'
 import { countryName } from '@/data/countries'
 import { currencyForCountry, currencyName } from '@/data/currencies'
 import { detectLocation } from '@/lib/geo'
-import { createGroup, deleteGroup, leaveGroup, rotateInviteCode, updateGroup } from '@/services/groups'
+import { createGroup, deleteGroup, rotateInviteCode, updateGroup } from '@/services/groups'
+import { setGroupHidden } from '@/services/groupPreferences'
 import { useAuthStore } from '@/stores/auth'
 import { useGroupsStore } from '@/stores/groups'
 import { useConfirm } from '@/composables/useConfirm'
@@ -53,6 +54,8 @@ const formError = ref('')
 
 const form = ref({ name: '', currency: 'USD' as CurrencyCode, destination: '', location: '', startDate: '', endDate: '' })
 const isOwner = computed(() => selected.value?.ownerId === auth.uid)
+const scope = ref<'active' | 'archived' | 'hidden'>('active')
+const displayedGroups = computed(() => store[scope.value])
 
 function openCreate(): void {
   editing.value = null
@@ -211,22 +214,14 @@ async function remove(): Promise<void> {
   optionsOpen.value = false
 }
 
-async function leave(): Promise<void> {
+async function toggleHidden(): Promise<void> {
   const group = selected.value
   const uid = auth.uid
   if (!group || !uid) return
 
-  const confirmed = await confirm({
-    title: t('groups.leaveTitle', { name: group.name }),
-    message: t('groups.leaveMessage'),
-    confirmLabel: t('groups.leaveAction'),
-    tone: 'danger',
-  })
-  if (!confirmed) return
-
   try {
-    await leaveGroup(group.id, uid)
-    toast.success(t('groups.left'))
+    await setGroupHidden(uid, group.id, scope.value !== 'hidden')
+    toast.success(t(scope.value === 'hidden' ? 'travel.shown' : 'travel.hidden'))
   } catch {
     toast.error(t('common.somethingWrong'))
   }
@@ -240,13 +235,20 @@ async function leave(): Promise<void> {
 
     <div class="px-5 py-5">
       <InvitationList />
+      <div class="mb-4 flex items-center justify-between gap-3">
+        <nav class="flex gap-3 text-xs" :aria-label="t('travel.groupScope')">
+          <button v-for="option in (['active', 'archived', 'hidden'] as const)" :key="option" type="button" :class="scope === option ? 'font-semibold text-accent' : 'text-muted'" :aria-pressed="scope === option" @click="scope = option">{{ t(`travel.${option}`) }}</button>
+        </nav>
+        <RouterLink :to="{ name: 'trips' }" class="shrink-0 text-xs font-medium text-accent">{{ t('travel.records') }}</RouterLink>
+      </div>
+      <p v-if="store.error" role="alert" class="mb-3 text-xs text-negative">{{ t('common.somethingWrong') }}</p>
       <AppSkeleton v-if="store.loading" :rows="3" />
 
       <AppEmptyState
-        v-else-if="!store.active.length"
+        v-else-if="!displayedGroups.length"
         :icon="Users"
-        :title="t('groups.empty')"
-        :description="t('groups.emptyHint')"
+        :title="scope === 'active' ? t('groups.empty') : t('travel.emptyList')"
+        :description="scope === 'active' ? t('groups.emptyHint') : t('travel.emptyListHint')"
       >
         <AppButton @click="openCreate">
           <template #icon><Plus class="size-4" /></template>
@@ -256,7 +258,7 @@ async function leave(): Promise<void> {
 
       <TransitionGroup v-else name="list" tag="div" class="relative space-y-3">
         <GroupCard
-          v-for="group in store.active"
+          v-for="group in displayedGroups"
           :key="group.id"
           :group="group"
           @open="router.push({ name: 'group', params: { id: group.id } })"
@@ -266,7 +268,7 @@ async function leave(): Promise<void> {
     </div>
 
     <button
-      v-if="store.active.length"
+      v-if="displayedGroups.length"
       class="fixed bottom-24 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
       :aria-label="t('groups.create')"
       @click="openCreate"
@@ -362,7 +364,9 @@ async function leave(): Promise<void> {
       </p>
 
       <div class="space-y-2">
+        <button v-if="selected" class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-accent hover:bg-surface-2" @click="optionsOpen = false; router.push({ name: 'group', params: { id: selected.id }, query: { close: '1' } })">{{ t(selected.archived ? 'travel.manageArchive' : isOwner ? 'travel.finish' : 'travel.saveRecord') }}</button>
         <button
+          v-if="!selected?.archived"
           class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
           @click="copyInvite"
         >
@@ -372,6 +376,7 @@ async function leave(): Promise<void> {
 
         <template v-if="isOwner">
           <button
+            v-if="!selected?.archived"
             class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
             @click="openEdit"
           >
@@ -380,6 +385,7 @@ async function leave(): Promise<void> {
           </button>
 
           <button
+            v-if="!selected?.archived"
             class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
             @click="rotateInvite"
           >
@@ -397,12 +403,11 @@ async function leave(): Promise<void> {
         </template>
 
         <button
-          v-else
-          class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-negative transition-colors hover:bg-negative-soft"
-          @click="leave"
+          class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted transition-colors hover:bg-surface-2"
+          @click="toggleHidden"
         >
           <Trash2 class="size-4" />
-          {{ t('groups.leaveAction') }}
+          {{ t(scope === 'hidden' ? 'travel.show' : 'travel.hide') }}
         </button>
       </div>
     </AppSheet>

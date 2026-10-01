@@ -48,6 +48,8 @@ export interface Group {
   /** Secret half of the invite link; readable only by members. */
   inviteCode: string
   archived: boolean
+  ledgerRevision?: number
+  planRevision?: number
   createdAt: Timestamp | null
   updatedAt: Timestamp | null
 }
@@ -59,6 +61,13 @@ export type SettlementMethod = 'linepay'
 
 /** Fixed spending categories; see `data/categories.ts`. */
 export type EntryCategory = 'food' | 'transport' | 'lodging' | 'shopping' | 'fun' | 'other'
+
+export interface ExpenseItem {
+  title: string
+  amountMinor: number
+  payerId: string
+  participantIds: string[]
+}
 
 /**
  * One line in a group's ledger.
@@ -77,6 +86,7 @@ export interface Entry {
   title: string
   payerId: string
   participantIds: string[]
+  items?: ExpenseItem[]
   amountMinor: number
   currency: CurrencyCode
   /** Units of the group currency per 1 unit of `currency`, at write time. */
@@ -118,6 +128,20 @@ export interface ItineraryItem {
   category: EntryCategory
   updatedBy: string
   updatedAt: Timestamp | null
+}
+
+export type TripPlanItem = Omit<ItineraryItem, 'id' | 'updatedBy' | 'updatedAt'>
+
+export interface TripRecord {
+  id: string
+  name: string
+  currency: CurrencyCode
+  destination: string
+  location: string
+  startDate: string
+  endDate: string
+  items: TripPlanItem[]
+  savedAt: Timestamp | null
 }
 
 /**

@@ -27,3 +27,4 @@ dist-ssr
 
 # Firebase CLI local deploy cache
 .firebase/
+secret.md
