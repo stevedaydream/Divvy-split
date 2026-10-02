@@ -139,8 +139,8 @@ view 不得直接 import `firebase/firestore`。
 - `services/sharedPhotos.ts`：Firestore 僅保存 `groups/{id}/photos` 索引、`photoMembers` 的本人 Google email、`photoCounters` 的累計分享數（500 張）。讀取每頁 50 筆，提醒每團最多 20 筆；自動權限同步／清理每帳號 6 小時一次，手動連接或重試可立即同步。
 - 照片分頁支援全選、批量保存／下載／日期更正／行程連結；上傳者與建立者可管理，封存後可補傳。我的頁面與旅行紀錄可進入本機相簿；本機、共享副本與私人備份的刪除互不連動。
 - 共享期限 30 天，App 開啟時提示未保存且 7 天內到期的照片，包含最後 1 天。到期在 App 隱藏；實體 Drive 共享副本需上傳者下次連接才清除，無伺服器排程。私人自動備份只於 App 開啟、有網路、授權有效時執行。
-- 正式啟用前需在既有 Google Cloud 專案啟用 Drive API、Google Picker API，設定 OAuth 同意畫面的 `drive.file` scope，確認既有瀏覽器 API Key 限制允許 Picker 與正式網域。設定資訊見 `secret.md`；不更改 Firebase 計費方案。
-- 驗證：121 項單元測試（Drive 使用模擬回應）、8 項 Auth／Firestore 整合測試、390px 手機版本機保存／全選／日期更正／重新載入及封存團照片分頁。正式 Google 授權、跨帳號 Drive 分享與備份尚未實測；未合併、推送或部署。
+- 2026-10-03 已啟用既有 Google Cloud 專案的 Drive API／Google Picker API，並在保留既有 API 限制下加入 Picker。OAuth 同意與正式 Google 帳號授權仍需實測；設定資訊見 `secret.md`，未更改 Firebase 計費方案。
+- 驗證：121 項單元測試（Drive 使用模擬回應）、8 項 Auth／Firestore 整合測試、390px 手機版本機保存／全選／日期更正／重新載入及封存團照片分頁。正式 Google 授權、跨帳號 Drive 分享與備份尚未實測。已直接從功能分支部署 Hosting 與相配規則／索引，未合併或推送。
 
 ## 5. 分帳演算法
 
@@ -186,6 +186,7 @@ npm run preview     # 預覽 dist
 
 ## 8. 近期變更
 
+- 2026-10-03：依使用者要求，將照片功能提交 `dd93210` 部署至既有 Firebase Hosting，Firestore 規則／索引一併部署；正式 `/photos` 的 HTML 與本次建置一致，主程式與 Service Worker 回應 200。啟用 Drive／Picker API，既有 API Key 加入 Picker；不新增 Firebase 付費服務。仍位於功能分支，未合併或推送。
 - 2026-10-02：新增本機相簿與 Drive 同行照片分享、全選、ZIP 匯出還原、行程連結、30 天分享期限及前景自動私人備份。Firebase 不儲存照片原檔，不新增付費服務；正式 Drive 串接待實測，功能分支未部署。
 - 2026-10-02：繁體中文功能頁標題與底部導航由「群組」改為「揪團」。
 - 2026-10-02：旅行記帳功能分支已合併至 `main`，Firestore 規則已編譯並部署至既有 Firebase 專案；尚未推送或部署前端。

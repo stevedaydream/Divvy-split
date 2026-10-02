@@ -223,4 +223,4 @@ JPY／KRW 這類無小數幣別會顯示成 `12000.00`。
 
 **代價**：每人需 Google 授權及可用 Drive 空間；新同行者需提供 Google email，上傳者連接時同步權限，同行者還需 Picker 選取檔案授權讀取。自動備份僅在 App 前景與授權有效時執行；45 分鐘後需重新連接，不保存 refresh token。HEIC 預覽取決於裝置；本機資料需 ZIP 或 Drive 防止清除網站資料後遺失。
 
-**上線條件**：既有 Google Cloud 專案啟用 Drive API／Google Picker API、OAuth 同意與 API Key 限制配置完成，實測正式帳號及跨帳號分享。前端與相配 Firestore 規則需一併部署。現階段已完成模擬測試及本機 UI 驗證，尚未部署。
+**上線條件與現況**：2026-10-03 依使用者要求，已啟用既有 Google Cloud 專案的 Drive API／Google Picker API、既有 API Key 加入 Picker，前端與相配 Firestore 規則／索引已一併部署。已完成模擬測試、本機 UI 與正式靜態檔案驗證；OAuth 同意、正式帳號授權及跨帳號分享仍待實測。
