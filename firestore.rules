@@ -394,7 +394,11 @@ service cloud.firestore {
 
       allow create: if revisionChanged(request.resource.data.groupId, 'ledgerRevision')
         && request.resource.data.createdBy == request.auth.uid
-        && request.resource.data.payerId == request.auth.uid
+        // 一般由付款人記帳；「我欠誰」允許記下別人代墊、只由自己分攤的支出，
+        // 只會增加記帳者自己的欠款。
+        && (request.resource.data.payerId == request.auth.uid
+          || (request.resource.data.type == 'expense'
+            && request.resource.data.participantIds == [request.auth.uid]))
         && request.resource.data.amountMinor is int
         && request.resource.data.groupAmountMinor is int
         && validExpense(request.resource.data)

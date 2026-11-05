@@ -80,6 +80,17 @@ describe.skipIf(process.env.DIVVY_EMULATOR_TEST !== '1')('旅行收尾與個人�
     expect((await getDoc(doc(db, 'groups', groupId))).data()!.archived).toBe(false)
   })
 
+  it('「我欠誰」可記別人代墊給自己的支出，但不能替別人記欠款', async () => {
+    await login(1)
+    const owe = { ...dinner, items: [], title: '計程車', payerId: a, participantIds: [b], amountMinor: 500, groupAmountMinor: 500 }
+    const id = await createEntry(owe, b)
+    expect((await getDoc(doc(db, 'entries', id))).data()).toMatchObject({ payerId: a, participantIds: [b], createdBy: b })
+    await deleteEntry(id)
+    await expect(createEntry({ ...owe, participantIds: [c] }, b)).rejects.toMatchObject({ code: 'permission-denied' })
+    await expect(createEntry({ ...owe, participantIds: [b, c] }, b)).rejects.toMatchObject({ code: 'permission-denied' })
+    await login(0)
+  })
+
   it('規則支援 12 項明細，並拒絕明細總和不符的直接寫入', async () => {
     const items = Array.from({ length: 12 }, (_, n) => ({ title: `測試 ${n}`, amountMinor: 100, payerId: a, participantIds: [a] }))
     const id = await createEntry({ ...dinner, participantIds: [a], items, amountMinor: 1200, groupAmountMinor: 1200 }, a)
