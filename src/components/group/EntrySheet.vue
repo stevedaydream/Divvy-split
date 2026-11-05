@@ -128,6 +128,13 @@ function setMode(next: EntryMode): void {
   if (next === 'paidFor') participants.value = participants.value.filter((id) => id !== props.uid)
 }
 
+const modeHint = computed(() => {
+  if (mode.value === 'split' && payer.value !== props.uid) {
+    return t('entryMode.splitOtherHint', { name: props.group.members[payer.value]?.nickname ?? '' })
+  }
+  return t(`entryMode.${mode.value}Hint`)
+})
+
 /** Per-person preview for the paid-for and owe modes. */
 const modeSummary = computed(() => {
   const total = convertedMinor.value
@@ -426,7 +433,7 @@ function submit(): void {
           {{ t(`entryMode.${option}`) }}
         </button>
       </div>
-      <p class="mt-2 text-center text-xs text-muted">{{ t(`entryMode.${mode}Hint`) }}</p>
+      <p class="mt-2 text-center text-xs text-muted">{{ modeHint }}</p>
     </div>
 
     <AmountInput
@@ -532,7 +539,24 @@ function submit(): void {
         <p v-if="modeSummary" class="mt-3 text-xs text-accent">{{ modeSummary }}</p>
       </section>
 
-      <section v-else-if="group.memberIds.length > 1 && !itemized">
+      <section v-if="group.memberIds.length > 1 && !itemized && mode === 'split'">
+        <h3 class="mb-2 text-xs font-medium text-muted">{{ t('entryMode.whoPaid') }}</h3>
+        <div class="flex flex-wrap gap-2">
+          <button
+            v-for="id in group.memberIds"
+            :key="id"
+            type="button"
+            class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+            :class="payer === id ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'"
+            :aria-pressed="payer === id"
+            @click="payer = id"
+          >
+            {{ id === uid ? t('entryMode.me') : group.members[id]?.nickname }}
+          </button>
+        </div>
+      </section>
+
+      <section v-if="group.memberIds.length > 1 && !itemized && mode !== 'owe'">
         <div class="mb-2 flex items-center justify-between">
           <h3 class="text-xs font-medium text-muted">
             {{ mode === 'paidFor' ? t('entryMode.paidForWho') : t('group.splitWith') }}

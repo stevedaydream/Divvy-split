@@ -80,14 +80,16 @@ describe.skipIf(process.env.DIVVY_EMULATOR_TEST !== '1')('旅行收尾與個人�
     expect((await getDoc(doc(db, 'groups', groupId))).data()!.archived).toBe(false)
   })
 
-  it('「我欠誰」可記別人代墊給自己的支出，但不能替別人記欠款', async () => {
+  it('支出可替別人記「誰先付」，還款只能由付款本人記錄', async () => {
     await login(1)
     const owe = { ...dinner, items: [], title: '計程車', payerId: a, participantIds: [b], amountMinor: 500, groupAmountMinor: 500 }
     const id = await createEntry(owe, b)
     expect((await getDoc(doc(db, 'entries', id))).data()).toMatchObject({ payerId: a, participantIds: [b], createdBy: b })
     await deleteEntry(id)
-    await expect(createEntry({ ...owe, participantIds: [c] }, b)).rejects.toMatchObject({ code: 'permission-denied' })
-    await expect(createEntry({ ...owe, participantIds: [b, c] }, b)).rejects.toMatchObject({ code: 'permission-denied' })
+    const shared = await createEntry({ ...owe, participantIds: [a, c] }, b)
+    expect((await getDoc(doc(db, 'entries', shared))).data()).toMatchObject({ payerId: a, participantIds: [a, c] })
+    await deleteEntry(shared)
+    await expect(createEntry({ ...owe, type: 'settlement', title: '還款', participantIds: [c] }, b)).rejects.toMatchObject({ code: 'permission-denied' })
     await login(0)
   })
 

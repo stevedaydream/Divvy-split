@@ -31,7 +31,10 @@ export default {
   },
   entryMode: {
     label: 'How to count this',
-    split: 'I paid, split it',
+    split: 'Paid & split',
+    whoPaid: 'Who paid?',
+    me: 'Me',
+    splitOtherHint: '{name} paid in full and shares it with the people picked.',
     paidFor: 'I paid for…',
     owe: 'I owe…',
     repay: 'I paid back…',

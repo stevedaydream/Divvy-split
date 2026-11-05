@@ -31,7 +31,10 @@ export default {
   },
   entryMode: {
     label: '這筆怎麼算',
-    split: '我先付，和誰分',
+    split: '誰先付，和誰分',
+    whoPaid: '誰先付？',
+    me: '我',
+    splitOtherHint: '{name} 付全額，和勾選的人平分。',
     paidFor: '我幫誰付',
     owe: '我欠誰',
     repay: '我還誰錢',
