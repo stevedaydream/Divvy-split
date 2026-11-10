@@ -27,7 +27,7 @@ vi.mock('@/lib/firebase', async () => {
 })
 
 import { app, auth, db } from '@/lib/firebase'
-import { createGroup, deleteGroup, joinGroup, syncMemberProfile } from '@/services/groups'
+import { addGuest, claimGuest, createGroup, deleteGroup, joinGroup, removeGuest, renameGuest, syncMemberProfile } from '@/services/groups'
 import { createEntry, deleteEntry, updateEntry, type EntryDraft } from '@/services/entries'
 import { createItem, updateItem } from '@/services/itinerary'
 import { createTripFromRecord, finishTrip, reopenTrip } from '@/services/tripRecords'
@@ -90,6 +90,46 @@ describe.skipIf(process.env.DIVVY_EMULATOR_TEST !== '1')('旅行收尾與個人�
     expect((await getDoc(doc(db, 'entries', shared))).data()).toMatchObject({ payerId: a, participantIds: [a, c] })
     await deleteEntry(shared)
     await expect(createEntry({ ...owe, type: 'settlement', title: '還款', participantIds: [c] }, b)).rejects.toMatchObject({ code: 'permission-denied' })
+    await login(0)
+  })
+
+  it('收款人可記錄對方已還款，旁人不行', async () => {
+    await login(2)
+    const repay = { ...dinner, items: [], type: 'settlement' as const, title: '還款', payerId: a, participantIds: [c], amountMinor: 300, groupAmountMinor: 300 }
+    const id = await createEntry(repay, c)
+    expect((await getDoc(doc(db, 'entries', id))).data()).toMatchObject({ payerId: a, participantIds: [c], createdBy: c })
+    await deleteEntry(id)
+    await login(1)
+    await expect(createEntry(repay, b)).rejects.toMatchObject({ code: 'permission-denied' })
+    await login(0)
+  })
+
+  it('虛擬成員可新增、記帳、代記還款，並由本人認領', async () => {
+    await login(1)
+    const guest = await addGuest(groupId, '阿明')
+    await renameGuest(groupId, guest, '阿明哥')
+    expect((await getDoc(doc(db, 'groups', groupId))).data()!.guests[guest]).toEqual({ nickname: '阿明哥' })
+    const taxi = await createEntry({ ...dinner, items: [], title: '計程車', payerId: guest, participantIds: [b, guest], amountMinor: 400, groupAmountMinor: 400 }, b)
+    // 雙方都不是自己，但牽涉虛擬成員，任何成員都能代記。
+    const repay = await createEntry({ ...dinner, items: [], type: 'settlement', title: '還款', payerId: a, participantIds: [guest], amountMinor: 100, groupAmountMinor: 100 }, b)
+    await expect(createEntry({ ...dinner, items: [], payerId: 'guest_NOTREAL1', participantIds: [b] }, b)).rejects.toThrow('invalid-entry')
+
+    // 不能把別人設成認領者，也不能偽造 guestEdit 一次改多位。
+    await expect(updateDoc(doc(db, 'groups', groupId), { [`guests.${guest}.linkedUid`]: c, guestEdit: guest })).rejects.toMatchObject({ code: 'permission-denied' })
+    await expect(updateDoc(doc(db, 'groups', groupId), { 'guests.guest_AAAAAAAA': { nickname: 'x' }, 'guests.guest_BBBBBBBB': { nickname: 'y' }, guestEdit: 'guest_AAAAAAAA' })).rejects.toMatchObject({ code: 'permission-denied' })
+
+    await login(2)
+    await claimGuest(groupId, guest, c)
+    expect((await getDoc(doc(db, 'groups', groupId))).data()!.guests[guest]).toEqual({ nickname: '阿明哥', linkedUid: c })
+    // 已認領的虛擬成員不可再改名或刪除。
+    await expect(renameGuest(groupId, guest, '改名')).rejects.toMatchObject({ code: 'permission-denied' })
+    await expect(removeGuest(groupId, guest)).rejects.toMatchObject({ code: 'permission-denied' })
+
+    await login(1)
+    await deleteEntry(taxi); await deleteEntry(repay)
+    const spare = await addGuest(groupId, '暫時')
+    await removeGuest(groupId, spare)
+    expect((await getDoc(doc(db, 'groups', groupId))).data()!.guests[spare]).toBeUndefined()
     await login(0)
   })
 

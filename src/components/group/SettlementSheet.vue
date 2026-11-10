@@ -4,6 +4,7 @@ import AppAvatar from '@/components/ui/AppAvatar.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import AppSheet from '@/components/ui/AppSheet.vue'
 import { formatNumber } from '@/lib/money'
+import { isGuestId } from '@/lib/guests'
 import type { CurrencyCode } from '@/types/currency'
 import type { Group, Transfer } from '@/types/models'
 
@@ -17,6 +18,11 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{ close: []; record: [transfer: Transfer] }>()
+
+/** The payer, the recipient, or anyone on behalf of a guest may record a transfer. */
+function canRecord(transfer: Transfer): boolean {
+  return transfer.from === props.uid || transfer.to === props.uid || isGuestId(transfer.from) || isGuestId(transfer.to)
+}
 
 function nameOf(id: string): string {
   return props.group.members[id]?.nickname ?? '?'
@@ -43,7 +49,7 @@ function nameOf(id: string): string {
               ? 'border-accent/40 bg-accent-soft/40 hover:border-accent'
               : 'border-border hover:border-border-strong'
           "
-          :disabled="transfer.from !== uid"
+          :disabled="!canRecord(transfer)"
           @click="emit('record', transfer)"
         >
           <span class="flex shrink-0 -space-x-2">
@@ -73,6 +79,12 @@ function nameOf(id: string): string {
             class="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-positive"
           >
             {{ $t('settle.youReceive') }}
+          </span>
+          <span
+            v-else-if="canRecord(transfer)"
+            class="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-muted"
+          >
+            {{ $t('settle.recordIt') }}
           </span>
         </button>
       </li>

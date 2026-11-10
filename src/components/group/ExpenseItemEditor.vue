@@ -37,18 +37,18 @@ function toggle(item: ExpenseItemInput, uid: string): void {
       <label class="flex items-center gap-3 text-xs text-muted">
         {{ t('itemized.payer') }}
         <select v-model="item.payerId" class="h-9 min-w-0 flex-1 rounded-lg border border-border bg-surface px-2 text-sm text-fg">
-          <option v-for="uid in group.memberIds" :key="uid" :value="uid">{{ group.members[uid]?.nickname }}</option>
+          <option v-for="uid in group.ledgerIds" :key="uid" :value="uid">{{ group.members[uid]?.nickname }}</option>
         </select>
       </label>
       <div class="flex items-center justify-between text-xs">
         <span class="font-medium text-muted">{{ t('group.splitWith') }}</span>
         <div class="flex gap-3">
           <button type="button" class="text-accent" @click="item.participantIds = [uid]">{{ t('group.justMe') }}</button>
-          <button type="button" class="text-accent" @click="item.participantIds = [...group.memberIds]">{{ t('group.splitAll') }}</button>
+          <button type="button" class="text-accent" @click="item.participantIds = [...group.ledgerIds]">{{ t('group.splitAll') }}</button>
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button v-for="uid in group.memberIds" :key="uid" type="button" class="rounded-lg border px-3 py-1.5 text-xs" :class="item.participantIds.includes(uid) ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'" :aria-pressed="item.participantIds.includes(uid)" @click="toggle(item, uid)">
+        <button v-for="uid in group.ledgerIds" :key="uid" type="button" class="rounded-lg border px-3 py-1.5 text-xs" :class="item.participantIds.includes(uid) ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'" :aria-pressed="item.participantIds.includes(uid)" @click="toggle(item, uid)">
           {{ group.members[uid]?.nickname }}
         </button>
       </div>

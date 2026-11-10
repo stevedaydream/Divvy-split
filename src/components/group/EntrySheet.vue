@@ -29,7 +29,7 @@ const props = defineProps<{
   /** Set when editing; null when adding. */
   entry: Entry | null
   /** Pre-selects the settlement tab and recipient from a settlement plan. */
-  presetSettlement: { to: string; amountMinor: number } | null
+  presetSettlement: { from?: string; to: string; amountMinor: number } | null
   /** Pre-fills a new expense, e.g. from an itinerary item's "record" shortcut. */
   presetExpense?: { title: string; date: string; category: EntryCategory } | null
   locale: string
@@ -47,7 +47,7 @@ const toast = useToast()
  * split   — I paid, shared with the picked people (may include me)
  * paidFor — I paid, only the picked others share it
  * owe     — someone else paid, it is all mine
- * repay   — a settlement from me to someone
+ * repay   — a settlement between two people; either side (or anyone, for a guest) records it
  */
 type EntryMode = 'split' | 'paidFor' | 'owe' | 'repay'
 const mode = ref<EntryMode>('split')
@@ -111,11 +111,17 @@ const pinned = ref<{ currency: CurrencyCode; minor: number; groupMinor: number }
 const method = ref<SettlementMethod | null>(null)
 const previewOpen = ref(false)
 
-const others = computed(() => props.group.memberIds.filter((uid) => uid !== props.uid))
+const others = computed(() => props.group.ledgerIds.filter((uid) => uid !== props.uid))
+/** Settlements may be recorded by either side, or for a guest who cannot sign in. */
+const recipients = computed(() => props.group.ledgerIds.filter((uid) => uid !== payer.value))
+watch(payer, (next) => {
+  if (recipient.value === next) recipient.value = null
+})
+const nameOf = (id: string) => (id === props.uid ? t('entryMode.me') : props.group.members[id]?.nickname ?? '?')
 
 const modeOptions = computed<EntryMode[]>(() => {
   if (props.entry?.type === 'settlement') return []
-  if (props.group.memberIds.length < 2) return []
+  if (props.group.ledgerIds.length < 2) return []
   return props.entry ? ['split', 'paidFor', 'owe'] : ['split', 'paidFor', 'owe', 'repay']
 })
 
@@ -150,7 +156,7 @@ const modeSummary = computed(() => {
   if (mode.value === 'paidFor' && participants.value.length) {
     const shares = expenseShares(
       { payerId: props.uid, participantIds: participants.value, groupAmountMinor: total },
-      new Set(props.group.memberIds),
+      new Set(props.group.ledgerIds),
     )
     const most = Math.max(...participants.value.map((id) => shares[id] ?? 0))
     return t(participants.value.length > 1 ? 'entryMode.paidForEach' : 'entryMode.paidForOne', {
@@ -189,11 +195,11 @@ const convertedMinor = computed(() =>
 )
 
 const itemSummary = computed(() => {
-  if (!itemized.value || !validExpenseItems(draftItems.value, itemsTotal.value, props.group.memberIds)) return []
+  if (!itemized.value || !validExpenseItems(draftItems.value, itemsTotal.value, props.group.ledgerIds)) return []
   const entry = { items: draftItems.value, payerId: payer.value, participantIds: participants.value, groupAmountMinor: convertedMinor.value }
-  const shares = expenseShares(entry, new Set(props.group.memberIds))
+  const shares = expenseShares(entry, new Set(props.group.ledgerIds))
   const paid = expensePayments(entry)
-  return props.group.memberIds.filter((uid) => shares[uid] || paid[uid]).map((uid) => ({ uid, share: shares[uid] ?? 0, paid: paid[uid] ?? 0 }))
+  return props.group.ledgerIds.filter((uid) => shares[uid] || paid[uid]).map((uid) => ({ uid, share: shares[uid] ?? 0, paid: paid[uid] ?? 0 }))
 })
 
 const recipientLineId = computed(() => {
@@ -310,6 +316,7 @@ watch(
     const preset = props.presetSettlement
     if (preset) {
       mode.value = 'repay'
+      payer.value = preset.from ?? props.uid
       recipient.value = preset.to
       amount.value = String(toMajor(preset.amountMinor, props.group.currency))
       participants.value = []
@@ -338,7 +345,7 @@ function toggleParticipant(uid: string): void {
 }
 
 function toggleAll(): void {
-  const pool = mode.value === 'paidFor' ? others.value : props.group.memberIds
+  const pool = mode.value === 'paidFor' ? others.value : props.group.ledgerIds
   participants.value = participants.value.length === pool.length ? [] : [...pool]
 }
 
@@ -366,7 +373,7 @@ function submit(): void {
     return
   }
   if (!isSettlement && itemized.value) {
-    if (!validExpenseItems(draftItems.value, amountMinor, props.group.memberIds)) {
+    if (!validExpenseItems(draftItems.value, amountMinor, props.group.ledgerIds)) {
       error.value = t('itemized.invalid')
       return
     }
@@ -521,7 +528,7 @@ function submit(): void {
         />
       </section>
 
-      <section v-if="group.memberIds.length > 1 && !itemized && mode === 'owe'">
+      <section v-if="group.ledgerIds.length > 1 && !itemized && mode === 'owe'">
         <h3 class="mb-2 text-xs font-medium text-muted">{{ t('entryMode.oweWho') }}</h3>
         <div class="flex flex-wrap gap-2">
           <button
@@ -539,11 +546,11 @@ function submit(): void {
         <p v-if="modeSummary" class="mt-3 text-xs text-accent">{{ modeSummary }}</p>
       </section>
 
-      <section v-if="group.memberIds.length > 1 && !itemized && mode === 'split'">
+      <section v-if="group.ledgerIds.length > 1 && !itemized && mode === 'split'">
         <h3 class="mb-2 text-xs font-medium text-muted">{{ t('entryMode.whoPaid') }}</h3>
         <div class="flex flex-wrap gap-2">
           <button
-            v-for="id in group.memberIds"
+            v-for="id in group.ledgerIds"
             :key="id"
             type="button"
             class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
@@ -556,7 +563,7 @@ function submit(): void {
         </div>
       </section>
 
-      <section v-if="group.memberIds.length > 1 && !itemized && mode !== 'owe'">
+      <section v-if="group.ledgerIds.length > 1 && !itemized && mode !== 'owe'">
         <div class="mb-2 flex items-center justify-between">
           <h3 class="text-xs font-medium text-muted">
             {{ mode === 'paidFor' ? t('entryMode.paidForWho') : t('group.splitWith') }}
@@ -578,7 +585,7 @@ function submit(): void {
 
         <div class="flex flex-wrap gap-2">
           <button
-            v-for="uid in mode === 'paidFor' ? others : group.memberIds"
+            v-for="uid in mode === 'paidFor' ? others : group.ledgerIds"
             :key="uid"
             class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
             :class="
@@ -596,11 +603,27 @@ function submit(): void {
     </div>
 
     <section v-else class="mt-7">
+      <h3 class="mb-2 text-xs font-medium text-muted">{{ t('settle.whoPaid') }}</h3>
+      <div class="mb-5 flex flex-wrap gap-2">
+        <button
+          v-for="id in group.ledgerIds"
+          :key="id"
+          type="button"
+          class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+          :class="payer === id ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'"
+          :aria-pressed="payer === id"
+          :disabled="!!entry"
+          @click="payer = id"
+        >
+          {{ nameOf(id) }}
+        </button>
+      </div>
+
       <h3 class="mb-2 text-xs font-medium text-muted">{{ t('settle.payTo') }}</h3>
 
       <div class="flex flex-wrap gap-2">
         <button
-          v-for="uid in others"
+          v-for="uid in recipients"
           :key="uid"
           class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
           :class="
@@ -610,12 +633,16 @@ function submit(): void {
           "
           @click="recipient = uid"
         >
-          {{ group.members[uid]?.nickname }}
+          {{ nameOf(uid) }}
         </button>
       </div>
 
+      <p v-if="recipient && payer !== uid" class="mt-3 text-xs text-accent">
+        {{ t('settle.recordFor', { from: nameOf(payer), to: nameOf(recipient) }) }}
+      </p>
+
       <div
-        v-if="recipient"
+        v-if="recipient && payer === uid"
         class="mt-4 rounded-card border border-border bg-surface-2 p-4"
       >
         <h4 class="text-xs font-medium text-muted">{{ t('settle.recipientDetails') }}</h4>
@@ -628,7 +655,7 @@ function submit(): void {
         <p v-else class="mt-1.5 text-xs text-faint">{{ t('settle.noPaymentInfo') }}</p>
       </div>
 
-      <div v-if="recipientLineId" class="mt-3 rounded-card border border-border bg-surface-2 p-4">
+      <div v-if="recipientLineId && payer === uid" class="mt-3 rounded-card border border-border bg-surface-2 p-4">
         <h4 class="text-xs font-medium text-muted">LINE Pay</h4>
 
         <template v-if="currency !== LINE_PAY_CURRENCY">

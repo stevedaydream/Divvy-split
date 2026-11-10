@@ -14,6 +14,8 @@ function group(id: string, memberIds: string[], updatedMs: number): Group {
     endDate: '',
     ownerId: memberIds[0]!,
     memberIds,
+    guests: {},
+    ledgerIds: memberIds,
     members: Object.fromEntries(memberIds.map((uid) => [uid, { nickname: uid.toUpperCase(), payment: null }])),
     inviteCode: 'code1234',
     archived: false,

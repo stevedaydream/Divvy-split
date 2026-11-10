@@ -18,6 +18,8 @@ import PhotoAlbum from '@/components/photos/PhotoAlbum.vue'
 import InviteSheet from '@/components/group/InviteSheet.vue'
 import ItinerarySheet from '@/components/group/ItinerarySheet.vue'
 import MemberStrip from '@/components/group/MemberStrip.vue'
+import GuestSheet from '@/components/group/GuestSheet.vue'
+import { activeGuestIds } from '@/lib/guests'
 import SettlementSheet from '@/components/group/SettlementSheet.vue'
 import TripCloseSheet from '@/components/group/TripCloseSheet.vue'
 import { useGroupDetail } from '@/composables/useGroupDetail'
@@ -46,14 +48,20 @@ const route = useRoute()
 const closeSheetOpen = ref(false)
 const savingEntry = ref(false)
 
-const { group, entries, itinerary, balances, settlements, total, loading, error, loadingItinerary, itineraryError } = useGroupDetail(toRef(props, 'id'))
+const { group, entries, rawEntries, itinerary, balances, settlements, total, loading, error, loadingItinerary, itineraryError } = useGroupDetail(toRef(props, 'id'))
 const closeReady = computed(() => !loading.value && !loadingItinerary.value && !error.value && !itineraryError.value)
 
 const selectedMember = ref('all')
 const entrySheetOpen = ref(false)
 const settleSheetOpen = ref(false)
 const editingEntry = ref<Entry | null>(null)
-const presetSettlement = ref<{ to: string; amountMinor: number } | null>(null)
+const presetSettlement = ref<{ from?: string; to: string; amountMinor: number } | null>(null)
+const guestSheetOpen = ref(false)
+const claimingGuest = ref(false)
+function openGuests(): void {
+  claimingGuest.value = false
+  guestSheetOpen.value = true
+}
 const presetExpense = ref<{ title: string; date: string; category: EntryCategory } | null>(null)
 
 onMounted(() => {
@@ -75,13 +83,19 @@ watch(group, (next) => {
   tab.value = defaultTab(tripPhase(next.startDate, next.endDate, todayIso()))
   if (route.query.tab === 'photos') tab.value = 'photos'
   if (route.query.close === '1') closeSheetOpen.value = true
+  // Fresh from an invite link: offer to take over a guest who stood in for them.
+  if (route.query.claim === '1' && activeGuestIds(next.guests).length
+    && !Object.values(next.guests).some((guest) => guest.linkedUid === auth.uid)) {
+    claimingGuest.value = true
+    guestSheetOpen.value = true
+  }
 })
 watch(() => group.value?.archived, (archived) => {
   if (archived) { entrySheetOpen.value = false; itemSheetOpen.value = false; aiSheetOpen.value = false; inviteSheetOpen.value = false }
 })
 
 /** A group of one has nobody to settle with or filter by. */
-const shared = computed(() => (group.value?.memberIds.length ?? 0) > 1)
+const shared = computed(() => (group.value?.ledgerIds.length ?? 0) > 1)
 
 /**
  * What the settle-up button says: debts still open, nothing ever owed, or
@@ -140,7 +154,7 @@ function recordTransfer(transfer: Transfer): void {
   settleSheetOpen.value = false
   editingEntry.value = null
   presetExpense.value = null
-  presetSettlement.value = { to: transfer.to, amountMinor: transfer.amountMinor }
+  presetSettlement.value = { from: transfer.from, to: transfer.to, amountMinor: transfer.amountMinor }
   entrySheetOpen.value = true
 }
 
@@ -381,14 +395,16 @@ function copyInvite(): void {
         </AppButton>
       </section>
 
-      <section v-if="shared" class="px-5 pb-6">
+      <section v-if="shared || !group.archived" class="px-5 pb-6">
         <MemberStrip
           :group="group"
           :balances="balances"
           :selected="selectedMember"
           :currency="group.currency"
           :locale="locale"
+          :can-manage="!group.archived"
           @select="selectedMember = $event"
+          @manage="openGuests"
         />
       </section>
 
@@ -446,6 +462,15 @@ function copyInvite(): void {
         :saving="savingEntry"
         @close="entrySheetOpen = false"
         @save="save"
+      />
+
+      <GuestSheet
+        :open="guestSheetOpen"
+        :group="group"
+        :uid="auth.uid ?? ''"
+        :entries="rawEntries"
+        :claiming="claimingGuest"
+        @close="guestSheetOpen = false"
       />
 
       <SettlementSheet

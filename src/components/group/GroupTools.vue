@@ -125,7 +125,7 @@ function clearQr(slot: QrSlot): void {
       :hint="t('tools.todosHint')"
       :items="todos"
       :readonly="group.archived"
-      :name-of="group.memberIds.length > 1 ? nameOf : undefined"
+      :name-of="group.ledgerIds.length > 1 ? nameOf : undefined"
       @add="add('todo', $event)"
       @toggle="toggle('todo', $event)"
       @remove="remove('todo', $event)"

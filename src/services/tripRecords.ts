@@ -4,6 +4,7 @@ import {
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { computeBalances } from '@/lib/settlement'
+import { guestAliases, ledgerIdsOf, resolveEntry } from '@/lib/guests'
 import { copyTripPlan, tripSnapshot } from '@/lib/tripRecords'
 import { inviteCode } from '@/lib/random'
 import { toEntry } from './entries'
@@ -27,7 +28,7 @@ export async function finishTrip(groupId: string, uid: string, saveRecord: boole
     getDocsFromServer(collection(db, 'groups', groupId, 'itinerary')),
   ])
   const group = { ...baseline.data(), id: groupId } as Group
-  if (archive && Object.values(computeBalances(entries.docs.map((entry) => toEntry(entry.id, entry.data())), group.memberIds)).some((amount) => amount !== 0)) throw new Error('unsettled')
+  if (archive && Object.values(computeBalances(entries.docs.map((entry) => resolveEntry(toEntry(entry.id, entry.data()), guestAliases(group.guests))), ledgerIdsOf(group))).some((amount) => amount !== 0)) throw new Error('unsettled')
   const snapshot = tripSnapshot(group, itinerary.docs.map((item) => toItem(item.id, item.data())))
   await runTransaction(db, async (transaction) => {
     const current = await transaction.get(groupRef)

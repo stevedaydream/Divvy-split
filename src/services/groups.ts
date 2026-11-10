@@ -1,15 +1,18 @@
 import {
-  addDoc, arrayUnion, collection, deleteDoc, doc, getDoc, getDocs,
+  addDoc, arrayUnion, collection, deleteDoc, deleteField, doc, getDoc, getDocs,
   onSnapshot, query, serverTimestamp, updateDoc, where, writeBatch,
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import { inviteCode } from '@/lib/random'
-import type { Group, GroupMember } from '@/types/models'
+import { displayMembers, GUEST_NAME_MAX, ledgerIdsOf, newGuestId } from '@/lib/guests'
+import type { Group, GroupMember, GuestMember } from '@/types/models'
 import type { CurrencyCode } from '@/types/currency'
 
 const COLLECTION = 'groups'
 
 function toGroup(id: string, data: Record<string, unknown>): Group {
+  const memberIds = (data.memberIds as string[]) ?? []
+  const guests = (data.guests as Record<string, GuestMember>) ?? {}
   return {
     id,
     name: (data.name as string) ?? '',
@@ -19,8 +22,10 @@ function toGroup(id: string, data: Record<string, unknown>): Group {
     startDate: (data.startDate as string) ?? '',
     endDate: (data.endDate as string) ?? '',
     ownerId: (data.ownerId as string) ?? '',
-    memberIds: (data.memberIds as string[]) ?? [],
-    members: (data.members as Record<string, GroupMember>) ?? {},
+    memberIds,
+    members: displayMembers((data.members as Record<string, GroupMember>) ?? {}, guests),
+    guests,
+    ledgerIds: ledgerIdsOf({ memberIds, guests }),
     inviteCode: (data.inviteCode as string) ?? '',
     archived: (data.archived as boolean) ?? false,
     ledgerRevision: (data.ledgerRevision as number) ?? 0,
@@ -111,6 +116,46 @@ export async function syncMemberProfile(uid: string, member: GroupMember): Promi
   const batch = writeBatch(db)
   snap.docs.forEach((d) => batch.update(d.ref, { [`members.${uid}`]: member }))
   await batch.commit()
+}
+
+/**
+ * Guest edits name the touched guest in `guestEdit`, because a security rule
+ * cannot iterate a map to find which key changed.
+ */
+export async function addGuest(groupId: string, nickname: string): Promise<string> {
+  const id = newGuestId()
+  await updateDoc(doc(db, COLLECTION, groupId), {
+    [`guests.${id}`]: { nickname: nickname.trim().slice(0, GUEST_NAME_MAX) },
+    guestEdit: id,
+    updatedAt: serverTimestamp(),
+  })
+  return id
+}
+
+export async function renameGuest(groupId: string, guestId: string, nickname: string): Promise<void> {
+  await updateDoc(doc(db, COLLECTION, groupId), {
+    [`guests.${guestId}.nickname`]: nickname.trim().slice(0, GUEST_NAME_MAX),
+    guestEdit: guestId,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/** Callers must first check that no entry names the guest. */
+export async function removeGuest(groupId: string, guestId: string): Promise<void> {
+  await updateDoc(doc(db, COLLECTION, groupId), {
+    [`guests.${guestId}`]: deleteField(),
+    guestEdit: guestId,
+    updatedAt: serverTimestamp(),
+  })
+}
+
+/** "This is me": the caller takes over the guest's place in the ledger. */
+export async function claimGuest(groupId: string, guestId: string, uid: string): Promise<void> {
+  await updateDoc(doc(db, COLLECTION, groupId), {
+    [`guests.${guestId}.linkedUid`]: uid,
+    guestEdit: guestId,
+    updatedAt: serverTimestamp(),
+  })
 }
 
 export type JoinResult = 'joined' | 'already-member' | 'invalid-code' | 'not-found'

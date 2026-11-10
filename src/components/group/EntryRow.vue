@@ -24,8 +24,8 @@ const itemized = computed(() => !!props.entry.items?.length)
 const names = (ids: string[]) => ids.map((id) => props.group.members[id]?.nickname ?? '?').join('、')
 const summary = computed(() => {
   const paid = expensePayments(props.entry)
-  const shares = expenseShares(props.entry, new Set(props.group.memberIds))
-  return props.group.memberIds.filter((uid) => shares[uid] || paid[uid]).map((uid) => ({ uid, share: shares[uid] ?? 0, paid: paid[uid] ?? 0 }))
+  const shares = expenseShares(props.entry, new Set(props.group.ledgerIds))
+  return props.group.ledgerIds.filter((uid) => shares[uid] || paid[uid]).map((uid) => ({ uid, share: shares[uid] ?? 0, paid: paid[uid] ?? 0 }))
 })
 
 const subtitle = computed(() => {

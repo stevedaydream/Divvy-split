@@ -112,6 +112,27 @@ service cloud.firestore {
           && after.members.diff(before.members).affectedKeys().hasOnly([request.auth.uid]);
       }
 
+      // Virtual members ("guests") live in the `guests` map. Each write may touch
+      // one guest and must name it in `guestEdit`, because rules cannot iterate
+      // a map. Any member may add, rename or remove an unclaimed guest; a member
+      // may claim one as themselves by setting `linkedUid` to their own uid.
+      // A claimed guest is frozen so the ledger keeps resolving to its owner.
+      function validGuestEdit(before, after) {
+        let b = before.get('guests', {});
+        let a = after.get('guests', {});
+        let id = after.get('guestEdit', '');
+        return a.diff(b).affectedKeys().size() == 0
+          || (a.diff(b).affectedKeys().hasOnly([id])
+            && id.matches('^guest_[A-Z0-9]{8,32}$')
+            && (!(id in b) || !('linkedUid' in b[id]))
+            && (!(id in a)
+              || (a[id].nickname is string && a[id].nickname.size() > 0 && a[id].nickname.size() <= 40
+                && (a[id].keys().hasOnly(['nickname'])
+                  || (a[id].keys().hasOnly(['nickname', 'linkedUid'])
+                    && id in b && a[id].nickname == b[id].nickname
+                    && a[id].linkedUid == request.auth.uid)))));
+      }
+
       // A member may edit shared fields and their own denormalised profile,
       // but never the roster, the owner, the currency or the invite code.
       function isMemberEdit() {
@@ -124,8 +145,9 @@ service cloud.firestore {
           && after.archived == before.archived
           && after.get('deleting', false) == before.get('deleting', false)
           && (after.inviteCode == before.inviteCode || (isOwner() && !before.archived))
-          && after.diff(before).affectedKeys().hasOnly(['name', 'destination', 'location', 'startDate', 'endDate', 'members', 'inviteCode', 'updatedAt', 'ledgerRevision', 'planRevision'])
+          && after.diff(before).affectedKeys().hasOnly(['name', 'destination', 'location', 'startDate', 'endDate', 'members', 'guests', 'guestEdit', 'inviteCode', 'updatedAt', 'ledgerRevision', 'planRevision'])
           && after.members.diff(before.members).affectedKeys().hasOnly([request.auth.uid])
+          && validGuestEdit(before, after)
           && (before.archived == false && before.get('deleting', false) == false
             || after.diff(before).affectedKeys().hasOnly(['members']))
           && (after.get('ledgerRevision', 0) == before.get('ledgerRevision', 0)
@@ -365,8 +387,18 @@ service cloud.firestore {
           && ids.hasOnly(members) ? amount : -1000000000000000;
       }
 
+      // Entries may name real members and virtual members alike.
+      function ledgerIds(groupId) {
+        let group = groupOf(groupId);
+        return group.memberIds.concat(group.get('guests', {}).keys());
+      }
+
+      function guestIds(groupId) {
+        return groupOf(groupId).get('guests', {}).keys();
+      }
+
       function validExpense(data) {
-        let members = groupOf(data.groupId).memberIds;
+        let members = ledgerIds(data.groupId);
         return data.type in ['expense', 'settlement']
           && data.amountMinor is int && data.amountMinor > 0 && data.amountMinor <= 1000000000000
           && data.groupAmountMinor is int && data.groupAmountMinor >= 0
@@ -395,9 +427,12 @@ service cloud.firestore {
       allow create: if revisionChanged(request.resource.data.groupId, 'ledgerRevision')
         && request.resource.data.createdBy == request.auth.uid
         // 支出可替任何成員記「誰先付」（明細本來就允許別的付款人）；
-        // 還款只能由付款的本人記錄。
-        && (request.resource.data.payerId == request.auth.uid
-          || request.resource.data.type == 'expense')
+        // 還款由付款人或收款人記錄；牽涉虛擬成員時任何成員都能代記。
+        && (request.resource.data.type == 'expense'
+          || request.resource.data.payerId == request.auth.uid
+          || request.resource.data.participantIds[0] == request.auth.uid
+          || request.resource.data.payerId in guestIds(request.resource.data.groupId)
+          || request.resource.data.participantIds[0] in guestIds(request.resource.data.groupId))
         && request.resource.data.amountMinor is int
         && request.resource.data.groupAmountMinor is int
         && validExpense(request.resource.data)

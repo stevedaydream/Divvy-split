@@ -28,6 +28,15 @@ export interface GroupMember {
   payment: PaymentInfo | null
 }
 
+/**
+ * Someone who shares the bills without an account. `linkedUid` is set once the
+ * real person joins and claims it; see `lib/guests.ts`.
+ */
+export interface GuestMember {
+  nickname: string
+  linkedUid?: string
+}
+
 export interface Group {
   id: string
   name: string
@@ -43,8 +52,15 @@ export interface Group {
   ownerId: string
   /** Kept flat so Firestore can query it with `array-contains`. */
   memberIds: string[]
-  /** Denormalised member profiles — avoids an N+1 read per snapshot. */
+  /**
+   * Denormalised member profiles — avoids an N+1 read per snapshot. Guests are
+   * folded in for display when the group is read; they are stored in `guests`.
+   */
   members: Record<string, GroupMember>
+  /** Virtual members, keyed by `guest_…` id. */
+  guests: Record<string, GuestMember>
+  /** Real members plus unclaimed guests: everyone a new entry may name. */
+  ledgerIds: string[]
   /** Secret half of the invite link; readable only by members. */
   inviteCode: string
   archived: boolean

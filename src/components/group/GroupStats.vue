@@ -50,11 +50,11 @@ watch([categoryChart, dayChart], ([category, day]) => {
   } catch { /* the choice lasts for this session only */ }
 })
 
-const shared = computed(() => props.group.memberIds.length > 1)
+const shared = computed(() => props.group.ledgerIds.length > 1)
 const scope = ref<'all' | 'mine'>('all')
 
 const items = computed(() =>
-  spendItems(props.entries, props.group.memberIds, shared.value && scope.value === 'mine' ? props.uid : null),
+  spendItems(props.entries, props.group.ledgerIds, shared.value && scope.value === 'mine' ? props.uid : null),
 )
 const total = computed(() => sumItems(items.value))
 const categories = computed(() => byCategory(items.value))

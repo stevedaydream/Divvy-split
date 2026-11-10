@@ -40,7 +40,7 @@ async function accept(invitation: Invitation): Promise<void> {
     const result = await acceptInvitation(invitation, { nickname: profile.nickname, payment: profile.payment }, uid)
     if (result === 'joined') {
       toast.success(t('invite.joined', { name: invitation.groupName }))
-      await router.push({ name: 'group', params: { id: invitation.groupId } })
+      await router.push({ name: 'group', params: { id: invitation.groupId }, query: { claim: '1' } })
     } else {
       toast.info(result === 'not-found' ? t('invite.notFound') : t('invite.invalid'))
     }

@@ -5,7 +5,7 @@ import type { Group, ItineraryItem, TripRecord } from '@/types/models'
 
 const group: Group = {
   id: 'trip', name: '潛水旅行', currency: 'TWD', destination: 'TW', location: '墾丁',
-  startDate: '2026-09-28', endDate: '2026-09-30', ownerId: 'a', memberIds: ['a'],
+  startDate: '2026-09-28', endDate: '2026-09-30', ownerId: 'a', memberIds: ['a'], guests: {}, ledgerIds: ['a'],
   members: { a: { nickname: '測試成員', payment: { bankName: '測試銀行', bankAccount: '僅測試' } } },
   inviteCode: 'test-only', archived: true, createdAt: null, updatedAt: null,
 }

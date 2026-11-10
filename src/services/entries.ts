@@ -6,6 +6,7 @@ import { db } from '@/lib/firebase'
 import { isCategory } from '@/data/categories'
 import { isIsoDate, toIsoDate, todayIso } from '@/lib/dates'
 import { validExpenseItems } from '@/lib/expenseItems'
+import { entryIdsOf, type Guests } from '@/lib/guests'
 import type { Entry, EntryCategory, EntryType, ExpenseItem, SettlementMethod } from '@/types/models'
 import type { CurrencyCode } from '@/types/currency'
 
@@ -125,8 +126,8 @@ export async function deleteEntry(entryId: string): Promise<void> {
 
 function validateDraft(draft: EntryDraft, group: Record<string, unknown> | undefined, author: string): void {
   if (!group || group.archived || group.deleting) throw new Error('group-archived')
-  const members = group.memberIds as string[]
-  if (!members.includes(author) || !members.includes(draft.payerId)
+  const members = entryIdsOf({ memberIds: group.memberIds as string[], guests: group.guests as Guests | undefined })
+  if (!(group.memberIds as string[]).includes(author) || !members.includes(draft.payerId)
     || !Number.isSafeInteger(draft.amountMinor) || draft.amountMinor <= 0 || draft.amountMinor > 1_000_000_000_000
     || !Number.isSafeInteger(draft.groupAmountMinor) || draft.groupAmountMinor < 0
     || !Number.isFinite(draft.rate) || draft.rate <= 0

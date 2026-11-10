@@ -57,7 +57,8 @@ async function attempt(): Promise<void> {
 
   if (result === 'joined' || result === 'already-member') {
     toast.success(t('invite.joined', { name: '' }).trim())
-    await router.replace({ name: 'group', params: { id: groupId } })
+    // `claim` lets the group page ask whether a virtual member was them.
+    await router.replace({ name: 'group', params: { id: groupId }, query: result === 'joined' ? { claim: '1' } : {} })
     return
   }
 

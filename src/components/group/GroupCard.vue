@@ -26,7 +26,7 @@ const place = computed(() => placeLabel(props.group.location, props.group.destin
         </span>
         <span class="flex shrink-0 items-center gap-1">
           <Users class="size-3.5" :stroke-width="1.75" />
-          {{ group.memberIds.length }}
+          {{ group.ledgerIds.length }}
         </span>
       </div>
     </button>

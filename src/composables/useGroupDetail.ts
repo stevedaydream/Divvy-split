@@ -3,6 +3,7 @@ import { watchGroup } from '@/services/groups'
 import { watchEntries } from '@/services/entries'
 import { watchItinerary } from '@/services/itinerary'
 import { computeBalances, computeSettlements, totalSpend } from '@/lib/settlement'
+import { guestAliases, resolveEntry } from '@/lib/guests'
 import type { Entry, Group, ItineraryItem } from '@/types/models'
 
 /**
@@ -13,7 +14,8 @@ import type { Entry, Group, ItineraryItem } from '@/types/models'
  */
 export function useGroupDetail(groupId: Ref<string>) {
   const group = ref<Group | null>(null)
-  const entries = ref<Entry[]>([])
+  /** Entries as stored; `entries` below reads claimed guests as their owners. */
+  const rawEntries = ref<Entry[]>([])
   const itinerary = ref<ItineraryItem[]>([])
   const loadingGroup = ref(true)
   const loadingEntries = ref(true)
@@ -45,7 +47,7 @@ export function useGroupDetail(groupId: Ref<string>) {
       loadingItinerary.value = true
       itineraryError.value = null
       group.value = null
-      entries.value = []
+      rawEntries.value = []
       error.value = null
 
       stopGroup = watchGroup(
@@ -63,7 +65,7 @@ export function useGroupDetail(groupId: Ref<string>) {
       stopEntries = watchEntries(
         id,
         (next) => {
-          entries.value = next
+          rawEntries.value = next
           loadingEntries.value = false
         },
         (cause) => {
@@ -84,11 +86,15 @@ export function useGroupDetail(groupId: Ref<string>) {
 
   onScopeDispose(teardown)
 
-  const memberIds = computed(() => group.value?.memberIds ?? [])
+  const entries = computed(() => {
+    const aliases = guestAliases(group.value?.guests)
+    return rawEntries.value.map((entry) => resolveEntry(entry, aliases))
+  })
+  const memberIds = computed(() => group.value?.ledgerIds ?? [])
   const balances = computed(() => computeBalances(entries.value, memberIds.value))
   const settlements = computed(() => computeSettlements(balances.value))
   const total = computed(() => totalSpend(entries.value))
   const loading = computed(() => loadingGroup.value || loadingEntries.value)
 
-  return { group, entries, itinerary, balances, settlements, total, loading, error, loadingItinerary, itineraryError }
+  return { group, entries, rawEntries, itinerary, balances, settlements, total, loading, error, loadingItinerary, itineraryError }
 }
