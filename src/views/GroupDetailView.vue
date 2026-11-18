@@ -302,7 +302,7 @@ function copyInvite(): void {
             v-for="option in TABS"
             :key="option"
             role="tab"
-            class="relative flex-1 py-2.5 text-sm font-medium transition-colors"
+            class="ui-control relative flex-1 py-2.5 text-sm font-medium transition-colors"
             :class="tab === option ? 'text-fg' : 'text-muted hover:text-fg'"
             :aria-selected="tab === option"
             @click="tab = option; photoItinerary = ''"
@@ -329,7 +329,7 @@ function copyInvite(): void {
         <p v-else-if="group.endDate && group.endDate < todayIso()" class="text-xs text-muted">{{ t('travel.endHint') }}</p>
         <p v-if="error || itineraryError" role="alert" class="text-xs text-negative">{{ t('common.somethingWrong') }}</p>
         <div class="flex items-center justify-between gap-3">
-          <button type="button" class="text-xs font-medium text-accent" @click="closeSheetOpen = true">{{ t(group.archived ? 'travel.manageArchive' : group.ownerId === auth.uid ? 'travel.finish' : 'travel.saveRecord') }}</button>
+          <button type="button" class="ui-control text-xs font-medium text-accent" @click="closeSheetOpen = true">{{ t(group.archived ? 'travel.manageArchive' : group.ownerId === auth.uid ? 'travel.finish' : 'travel.saveRecord') }}</button>
           <RouterLink :to="{ name: 'trips' }" class="text-xs text-muted">{{ t('travel.records') }}</RouterLink>
         </div>
       </section>
@@ -345,7 +345,7 @@ function copyInvite(): void {
       <GroupTools v-else-if="tab === 'tools'" :group="group" :uid="auth.uid ?? ''" />
 
       <template v-else-if="tab === 'photos'">
-        <button v-if="photoItinerary" type="button" class="px-4 pt-3 text-xs text-accent" @click="photoItinerary = ''">{{ t('photos.showAll') }}</button>
+        <button v-if="photoItinerary" type="button" class="ui-control px-4 pt-3 text-xs text-accent" @click="photoItinerary = ''">{{ t('photos.showAll') }}</button>
         <PhotoAlbum :group="group" :itinerary="itinerary" :itinerary-filter="photoItinerary" />
       </template>
 
@@ -372,7 +372,7 @@ function copyInvite(): void {
         <!-- A personal trip rarely needs inviting, so it stays a quiet link. -->
         <button
           v-if="!shared && !group.archived"
-          class="mt-2 inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent"
+          class="ui-control mt-2 inline-flex items-center gap-1 text-xs text-muted transition-colors hover:text-accent"
           @click="copyInvite"
         >
           <UserPlus class="size-3.5" />
@@ -444,7 +444,7 @@ function copyInvite(): void {
 
       <button
         v-if="tab !== 'tools' && tab !== 'photos' && !group.archived"
-        class="fixed bottom-6 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
+        class="ui-control fixed bottom-6 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
         :aria-label="tab === 'itinerary' ? $t('itinerary.addSpot') : $t('group.addExpense')"
         @click="onFab"
       >

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TigerMascot from '@/components/ui/TigerMascot.vue'
 import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -233,13 +234,17 @@ async function toggleHidden(): Promise<void> {
 <template>
   <AppShell nav>
     <TopBar :title="t('groups.title')" />
+    <section class="trip-welcome mx-5 mt-5" aria-hidden="true">
+      <div><p class="trip-welcome__title">Divvy</p><p class="trip-welcome__copy">{{ t('login.tagline') }}</p></div>
+      <TigerMascot pose="map" :size="100" />
+    </section>
 
     <div class="px-5 py-5">
       <InvitationList />
       <PhotoExpiryNotice />
       <div class="mb-4 flex items-center justify-between gap-3">
-        <nav class="flex gap-3 text-xs" :aria-label="t('travel.groupScope')">
-          <button v-for="option in (['active', 'archived', 'hidden'] as const)" :key="option" type="button" :class="scope === option ? 'font-semibold text-accent' : 'text-muted'" :aria-pressed="scope === option" @click="scope = option">{{ t(`travel.${option}`) }}</button>
+        <nav class="scope-tabs flex gap-1 text-sm" :aria-label="t('travel.groupScope')">
+          <button v-for="option in (['active', 'archived', 'hidden'] as const)" :key="option" type="button" :class="scope === option ? 'font-semibold text-accent' : 'text-muted'" :aria-pressed="scope === option" @click="scope = option" class="ui-control">{{ t(`travel.${option}`) }}</button>
         </nav>
         <RouterLink :to="{ name: 'trips' }" class="shrink-0 text-xs font-medium text-accent">{{ t('travel.records') }}</RouterLink>
       </div>
@@ -271,7 +276,7 @@ async function toggleHidden(): Promise<void> {
 
     <button
       v-if="displayedGroups.length"
-      class="fixed bottom-24 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
+      class="ui-control stitched-fab fixed bottom-24 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
       :aria-label="t('groups.create')"
       @click="openCreate"
     >
@@ -293,7 +298,7 @@ async function toggleHidden(): Promise<void> {
           <div class="flex gap-2">
             <button
               type="button"
-              class="flex h-11 min-w-0 flex-1 items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors hover:border-border-strong"
+              class="ui-control flex h-11 min-w-0 flex-1 items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors hover:border-border-strong"
               @click="destinationPickerOpen = true"
             >
               <span class="truncate" :class="form.destination ? 'font-medium' : 'text-faint'">
@@ -314,7 +319,7 @@ async function toggleHidden(): Promise<void> {
         >
           <button
             type="button"
-            class="flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors disabled:opacity-50"
+            class="ui-control flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors disabled:opacity-50"
             :disabled="!!editing"
             @click="pickerOpen = true"
           >
@@ -337,14 +342,14 @@ async function toggleHidden(): Promise<void> {
               v-model="form.startDate"
               type="date"
               :aria-label="t('itinerary.startDate')"
-              class="tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
+              class="paper-input tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
             />
             <input
               v-model="form.endDate"
               type="date"
               :min="form.startDate || undefined"
               :aria-label="t('itinerary.endDate')"
-              class="tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
+              class="paper-input tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
             />
           </div>
         </AppField>
@@ -366,10 +371,10 @@ async function toggleHidden(): Promise<void> {
       </p>
 
       <div class="space-y-2">
-        <button v-if="selected" class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-accent hover:bg-surface-2" @click="optionsOpen = false; router.push({ name: 'group', params: { id: selected.id }, query: { close: '1' } })">{{ t(selected.archived ? 'travel.manageArchive' : isOwner ? 'travel.finish' : 'travel.saveRecord') }}</button>
+        <button v-if="selected" class="ui-control flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-accent hover:bg-surface-2" @click="optionsOpen = false; router.push({ name: 'group', params: { id: selected.id }, query: { close: '1' } })">{{ t(selected.archived ? 'travel.manageArchive' : isOwner ? 'travel.finish' : 'travel.saveRecord') }}</button>
         <button
           v-if="!selected?.archived"
-          class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
+          class="ui-control flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
           @click="copyInvite"
         >
           <Share2 class="size-4 text-muted" />
@@ -379,7 +384,7 @@ async function toggleHidden(): Promise<void> {
         <template v-if="isOwner">
           <button
             v-if="!selected?.archived"
-            class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
+            class="ui-control flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
             @click="openEdit"
           >
             <MapPin class="size-4 text-muted" />
@@ -388,7 +393,7 @@ async function toggleHidden(): Promise<void> {
 
           <button
             v-if="!selected?.archived"
-            class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
+            class="ui-control flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm transition-colors hover:bg-surface-2"
             @click="rotateInvite"
           >
             <RotateCw class="size-4 text-muted" />
@@ -396,7 +401,7 @@ async function toggleHidden(): Promise<void> {
           </button>
 
           <button
-            class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-negative transition-colors hover:bg-negative-soft"
+            class="ui-control flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-negative transition-colors hover:bg-negative-soft"
             @click="remove"
           >
             <Trash2 class="size-4" />
@@ -405,7 +410,7 @@ async function toggleHidden(): Promise<void> {
         </template>
 
         <button
-          class="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted transition-colors hover:bg-surface-2"
+          class="ui-control flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted transition-colors hover:bg-surface-2"
           @click="toggleHidden"
         >
           <Trash2 class="size-4" />

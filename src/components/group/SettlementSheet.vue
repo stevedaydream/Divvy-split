@@ -43,7 +43,7 @@ function nameOf(id: string): string {
     <ul v-else class="space-y-2">
       <li v-for="(transfer, index) in transfers" :key="index">
         <button
-          class="flex w-full items-center gap-3 rounded-card border p-3.5 text-left transition-colors"
+          class="ui-control flex w-full items-center gap-3 rounded-card border p-3.5 text-left transition-colors"
           :class="
             transfer.from === uid || transfer.to === uid
               ? 'border-accent/40 bg-accent-soft/40 hover:border-accent'

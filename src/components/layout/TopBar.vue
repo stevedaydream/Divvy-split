@@ -14,12 +14,12 @@ function goBack(): void {
 
 <template>
   <header
-    class="sticky top-0 z-30 border-b border-border bg-bg/85 backdrop-blur-lg pt-[env(safe-area-inset-top)]"
+    class="top-bar sticky top-0 z-30 pt-[env(safe-area-inset-top)]"
   >
-    <div class="flex h-14 items-center gap-1 px-2">
+    <div class="flex min-h-18 items-center gap-1 px-2">
       <button
         v-if="back"
-        class="grid size-9 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+        class="ui-control grid size-9 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
         aria-label="Back"
         @click="goBack"
       >
@@ -27,7 +27,7 @@ function goBack(): void {
       </button>
 
       <div class="min-w-0 flex-1" :class="back ? '' : 'px-2'">
-        <h1 class="truncate text-base font-semibold">{{ title }}</h1>
+        <h1 class="truncate text-2xl font-bold">{{ title }}</h1>
         <p v-if="subtitle" class="truncate text-xs text-muted">{{ subtitle }}</p>
       </div>
 

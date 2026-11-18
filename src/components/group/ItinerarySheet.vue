@@ -137,7 +137,7 @@ function submit(): void {
       <button
         v-for="option in KINDS"
         :key="option"
-        class="rounded-lg py-2 text-sm font-medium transition-colors"
+        class="ui-control rounded-lg py-2 text-sm font-medium transition-colors"
         :class="kind === option ? 'bg-surface text-fg shadow-card' : 'text-muted'"
         :aria-pressed="kind === option"
         @click="kind = option"
@@ -159,7 +159,7 @@ function submit(): void {
             type="date"
             :min="bounds.min"
             :max="bounds.max"
-            class="tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
+            class="paper-input tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
           />
         </label>
         <label v-if="kind === 'lodging'" class="space-y-1.5">
@@ -168,7 +168,7 @@ function submit(): void {
             v-model="endDate"
             type="date"
             :min="date ? addDays(date, 1) : undefined"
-            class="tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
+            class="paper-input tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
           />
         </label>
         <label v-else class="space-y-1.5">
@@ -176,7 +176,7 @@ function submit(): void {
           <input
             v-model="time"
             type="time"
-            class="tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
+            class="paper-input tabular h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm focus:border-accent focus:outline-none"
           />
         </label>
       </div>
@@ -198,7 +198,7 @@ function submit(): void {
             v-for="option in CATEGORIES"
             :key="option.code"
             type="button"
-            class="flex h-10 items-center justify-center gap-1.5 rounded-lg border text-sm transition-colors"
+            class="ui-control flex h-10 items-center justify-center gap-1.5 rounded-lg border text-sm transition-colors"
             :class="
               category === option.code
                 ? 'border-accent bg-accent-soft font-medium text-accent'

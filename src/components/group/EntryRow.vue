@@ -39,7 +39,7 @@ const showOriginal = computed(() => props.entry.currency !== props.currency)
 </script>
 
 <template>
-  <article class="rounded-card border border-border bg-surface p-4 shadow-card">
+  <article class="ledger-row rounded-card border border-border bg-surface p-4 ">
     <div class="flex items-center gap-3">
     <span
       class="grid size-9 shrink-0 place-items-center rounded-full"
@@ -51,7 +51,7 @@ const showOriginal = computed(() => props.entry.currency !== props.currency)
       </span>
     </span>
 
-    <div class="min-w-0 flex-1">
+    <div class="entry-description min-w-0 flex-1">
       <h3 class="truncate text-sm font-medium">
         {{ isSettlement ? $t('group.settlement') : entry.title }}
       </h3>
@@ -64,13 +64,13 @@ const showOriginal = computed(() => props.entry.currency !== props.currency)
         </template>
         <template v-if="!isSettlement && entry.note"> · {{ entry.note }}</template>
       </p>
-      <button v-if="itemized" type="button" class="mt-1 text-xs text-accent" :aria-expanded="expanded" @click="expanded = !expanded">
+      <button v-if="itemized" type="button" class="ui-control mt-1 text-xs text-accent" :aria-expanded="expanded" @click="expanded = !expanded">
         {{ $t(expanded ? 'itemized.collapse' : 'itemized.expand', { count: entry.items!.length }) }}
       </button>
     </div>
 
-    <div class="shrink-0 text-right">
-      <p class="tabular text-sm font-semibold" :class="isSettlement ? 'text-accent' : ''">
+    <div class="entry-amount shrink-0 text-right">
+      <p class="tabular text-base font-semibold" :class="isSettlement ? 'text-accent' : ''">
         {{ formatNumber(entry.groupAmountMinor, currency, locale) }}
       </p>
       <p v-if="showOriginal" class="tabular text-[11px] text-faint">
@@ -80,16 +80,16 @@ const showOriginal = computed(() => props.entry.currency !== props.currency)
 
     <!-- Always visible on touch devices; the old build hid these behind
          `group-hover`, which a phone can never trigger. -->
-    <div v-if="canEdit" class="flex shrink-0 gap-0.5">
+    <div v-if="canEdit" class="entry-actions flex shrink-0 gap-0.5">
       <button
-        class="grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+        class="ui-control grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
         :aria-label="$t('common.edit')"
         @click="$emit('edit')"
       >
         <Pencil class="size-3.5" />
       </button>
       <button
-        class="grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-negative-soft hover:text-negative"
+        class="ui-control grid size-8 place-items-center rounded-full text-muted transition-colors hover:bg-negative-soft hover:text-negative"
         :aria-label="$t('common.delete')"
         @click="$emit('remove')"
       >

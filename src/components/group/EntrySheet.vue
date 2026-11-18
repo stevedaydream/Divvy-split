@@ -433,7 +433,7 @@ function submit(): void {
           type="button"
           role="radio"
           :aria-checked="mode === option"
-          class="rounded-lg px-2 py-2 text-sm font-medium transition-colors"
+          class="ui-control rounded-lg px-2 py-2 text-sm font-medium transition-colors"
           :class="mode === option ? 'bg-surface text-fg shadow-card' : 'text-muted'"
           @click="setMode(option)"
         >
@@ -452,7 +452,7 @@ function submit(): void {
     <div v-else class="text-center">
       <p class="text-xs text-muted">{{ t('itemized.total') }}</p>
       <p class="tabular mt-1 text-3xl font-semibold">{{ formatNumber(itemsTotal, currency, locale) }}</p>
-      <button type="button" class="mt-1 text-sm text-accent" @click="pickerOpen = true">{{ currency }}</button>
+      <button type="button" class="ui-control mt-1 text-sm text-accent" @click="pickerOpen = true">{{ currency }}</button>
     </div>
 
     <p v-if="showConversion" class="mt-2 text-center text-xs text-muted">
@@ -469,13 +469,13 @@ function submit(): void {
         v-model="date"
         type="date"
         required
-        class="tabular h-9 min-w-0 flex-1 rounded-lg border border-border bg-surface px-2.5 text-sm focus:border-accent focus:outline-none"
+        class="paper-input tabular h-9 min-w-0 flex-1 rounded-lg border border-border bg-surface px-2.5 text-sm focus:border-accent focus:outline-none"
       />
       <button
         v-for="option in [{ value: today, label: t('group.today') }, { value: yesterday, label: t('group.yesterday') }]"
         :key="option.value"
         type="button"
-        class="h-9 shrink-0 rounded-lg border px-2.5 text-xs font-medium transition-colors"
+        class="ui-control h-9 shrink-0 rounded-lg border px-2.5 text-xs font-medium transition-colors"
         :class="date === option.value ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'"
         @click="date = option.value"
       >
@@ -507,7 +507,7 @@ function submit(): void {
             v-for="item in CATEGORIES"
             :key="item.code"
             type="button"
-            class="flex h-10 items-center justify-center gap-1.5 rounded-lg border text-sm transition-colors"
+            class="ui-control flex h-10 items-center justify-center gap-1.5 rounded-lg border text-sm transition-colors"
             :class="
               category === item.code
                 ? 'border-accent bg-accent-soft font-medium text-accent'
@@ -535,7 +535,7 @@ function submit(): void {
             v-for="uid in others"
             :key="uid"
             type="button"
-            class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+            class="ui-control rounded-lg border px-3 py-1.5 text-sm transition-colors"
             :class="creditor === uid ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'"
             :aria-pressed="creditor === uid"
             @click="creditor = uid"
@@ -553,7 +553,7 @@ function submit(): void {
             v-for="id in group.ledgerIds"
             :key="id"
             type="button"
-            class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+            class="ui-control rounded-lg border px-3 py-1.5 text-sm transition-colors"
             :class="payer === id ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'"
             :aria-pressed="payer === id"
             @click="payer = id"
@@ -571,13 +571,13 @@ function submit(): void {
           <div class="flex gap-3">
             <button
               v-if="mode === 'split'"
-              class="text-xs font-medium"
+              class="ui-control text-xs font-medium"
               :class="justMe ? 'text-fg' : 'text-accent'"
               @click="participants = [uid]"
             >
               {{ t('group.justMe') }}
             </button>
-            <button class="text-xs font-medium text-accent" @click="toggleAll">
+            <button class="ui-control text-xs font-medium text-accent" @click="toggleAll">
               {{ t('group.splitAll') }}
             </button>
           </div>
@@ -587,7 +587,7 @@ function submit(): void {
           <button
             v-for="uid in mode === 'paidFor' ? others : group.ledgerIds"
             :key="uid"
-            class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+            class="ui-control rounded-lg border px-3 py-1.5 text-sm transition-colors"
             :class="
               participants.includes(uid)
                 ? 'border-accent bg-accent-soft text-accent'
@@ -609,7 +609,7 @@ function submit(): void {
           v-for="id in group.ledgerIds"
           :key="id"
           type="button"
-          class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+          class="ui-control rounded-lg border px-3 py-1.5 text-sm transition-colors"
           :class="payer === id ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'"
           :aria-pressed="payer === id"
           :disabled="!!entry"
@@ -625,7 +625,7 @@ function submit(): void {
         <button
           v-for="uid in recipients"
           :key="uid"
-          class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+          class="ui-control rounded-lg border px-3 py-1.5 text-sm transition-colors"
           :class="
             recipient === uid
               ? 'border-accent bg-accent-soft text-accent'
@@ -643,7 +643,7 @@ function submit(): void {
 
       <div
         v-if="recipient && payer === uid"
-        class="mt-4 rounded-card border border-border bg-surface-2 p-4"
+        class="paper-card mt-4 rounded-card border border-border bg-surface-2 p-4"
       >
         <h4 class="text-xs font-medium text-muted">{{ t('settle.recipientDetails') }}</h4>
         <template v-if="group.members[recipient]?.payment">
@@ -655,7 +655,7 @@ function submit(): void {
         <p v-else class="mt-1.5 text-xs text-faint">{{ t('settle.noPaymentInfo') }}</p>
       </div>
 
-      <div v-if="recipientLineId && payer === uid" class="mt-3 rounded-card border border-border bg-surface-2 p-4">
+      <div v-if="recipientLineId && payer === uid" class="paper-card mt-3 rounded-card border border-border bg-surface-2 p-4">
         <h4 class="text-xs font-medium text-muted">LINE Pay</h4>
 
         <template v-if="currency !== LINE_PAY_CURRENCY">

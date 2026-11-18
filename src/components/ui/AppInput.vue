@@ -22,7 +22,7 @@ defineEmits<{ 'update:modelValue': [value: string] }>()
     :placeholder="placeholder"
     :inputmode="inputmode"
     :autocomplete="autocomplete"
-    class="h-11 w-full rounded-xl border border-border bg-surface px-3.5 text-sm text-fg transition-colors placeholder:text-faint focus:border-accent focus:outline-none"
+    class="paper-input h-12 w-full rounded-xl border border-border bg-surface px-3.5 text-base text-fg transition-colors placeholder:text-faint focus:border-border-strong"
     :class="mono ? 'font-mono tabular' : ''"
     @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
   />

@@ -167,7 +167,7 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
         <button
           v-for="option in MODES"
           :key="option"
-          class="rounded-lg py-2 text-xs font-medium transition-colors"
+          class="ui-control rounded-lg py-2 text-xs font-medium transition-colors"
           :class="mode === option ? 'bg-surface text-fg shadow-card' : 'text-muted'"
           :aria-pressed="mode === option"
           @click="mode = option"
@@ -183,7 +183,7 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
             <button
               v-for="option in STYLES"
               :key="option"
-              class="h-9 rounded-lg border text-sm transition-colors"
+              class="ui-control h-9 rounded-lg border text-sm transition-colors"
               :class="style === option ? 'border-accent bg-accent-soft font-medium text-accent' : 'border-border text-muted'"
               @click="style = option"
             >
@@ -197,7 +197,7 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
             <button
               v-for="theme in THEMES"
               :key="theme"
-              class="rounded-lg border px-3 py-1.5 text-sm transition-colors"
+              class="ui-control rounded-lg border px-3 py-1.5 text-sm transition-colors"
               :class="themes.includes(theme) ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'"
               @click="toggleTheme(theme)"
             >
@@ -219,7 +219,7 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
           rows="6"
           maxlength="8000"
           :placeholder="t('ai.parsePlaceholder')"
-          class="w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm placeholder:text-faint focus:border-accent focus:outline-none"
+          class="paper-input w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm placeholder:text-faint focus:border-accent focus:outline-none"
         />
         <p class="text-[11px] text-faint">{{ t('ai.parseHint') }}</p>
       </section>
@@ -273,7 +273,7 @@ const money = (minor: number) => formatNumber(minor, props.group.currency, props
         </label>
       </section>
 
-      <button class="mt-6 block w-full text-center text-[11px] text-faint hover:text-negative" @click="forgetKey">
+      <button class="ui-control mt-6 block w-full text-center text-[11px] text-faint hover:text-negative" @click="forgetKey">
         {{ t('ai.forgetKey') }}
       </button>
     </template>

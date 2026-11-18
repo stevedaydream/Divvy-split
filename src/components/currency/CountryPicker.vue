@@ -49,7 +49,7 @@ const popular = computed(() => (search.value ? [] : POPULAR_COUNTRIES))
           v-model="search"
           type="search"
           :placeholder="$t('country.search')"
-          class="h-11 w-full rounded-xl border border-border bg-surface-2 pl-9 pr-3 text-sm focus:border-accent focus:outline-none"
+          class="paper-input h-11 w-full rounded-xl border border-border bg-surface-2 pl-9 pr-3 text-sm focus:border-accent focus:outline-none"
         />
       </div>
     </div>
@@ -60,7 +60,7 @@ const popular = computed(() => (search.value ? [] : POPULAR_COUNTRIES))
         <button
           v-for="code in popular"
           :key="code"
-          class="rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors"
+          class="ui-control rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors"
           :class="
             selected === code
               ? 'border-accent bg-accent-soft text-accent'
@@ -76,7 +76,7 @@ const popular = computed(() => (search.value ? [] : POPULAR_COUNTRIES))
     <ul class="-mx-2">
       <li v-for="item in results" :key="item.code">
         <button
-          class="flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
+          class="ui-control flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
           @click="emit('select', item.code)"
         >
           <span class="truncate text-sm font-medium">{{ item.name }}</span>

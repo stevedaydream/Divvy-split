@@ -38,14 +38,14 @@ function submit(): void {
 </script>
 
 <template>
-  <section class="rounded-card border border-border bg-surface p-4 shadow-card">
+  <section class="paper-card rounded-card border border-border bg-surface p-4 shadow-card">
     <header class="flex items-baseline justify-between">
       <h2 class="text-sm font-semibold">{{ title }}</h2>
       <span class="flex items-center gap-3">
         <span v-if="items.length" class="tabular text-xs text-muted">{{ done }} / {{ items.length }}</span>
         <button
           v-if="actionLabel && !readonly"
-          class="inline-flex items-center gap-1 text-xs font-medium text-accent"
+          class="ui-control inline-flex items-center gap-1 text-xs font-medium text-accent"
           @click="emit('action')"
         >
           <Sparkles class="size-3.5" /> {{ actionLabel }}
@@ -57,7 +57,7 @@ function submit(): void {
     <ul v-if="items.length" class="mt-3 space-y-0.5">
       <li v-for="item in items" :key="item.id" class="group flex items-center gap-2">
         <button
-          class="flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1.5 text-left"
+          class="ui-control flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1.5 text-left"
           role="checkbox"
           :aria-checked="item.done"
           :disabled="readonly"
@@ -80,7 +80,7 @@ function submit(): void {
         </button>
         <button
           v-if="!readonly"
-          class="grid size-7 shrink-0 place-items-center rounded-full text-faint transition-colors hover:bg-negative-soft hover:text-negative"
+          class="ui-control grid size-7 shrink-0 place-items-center rounded-full text-faint transition-colors hover:bg-negative-soft hover:text-negative"
           :aria-label="t('common.delete')"
           @click="emit('remove', item)"
         >
@@ -91,7 +91,7 @@ function submit(): void {
 
     <button
       v-else-if="presetLabel && !readonly"
-      class="mt-3 w-full rounded-lg border border-dashed border-border py-2 text-xs text-muted transition-colors hover:border-accent hover:text-accent"
+      class="ui-control mt-3 w-full rounded-lg border border-dashed border-border py-2 text-xs text-muted transition-colors hover:border-accent hover:text-accent"
       @click="emit('preset')"
     >
       {{ presetLabel }}
@@ -102,11 +102,11 @@ function submit(): void {
         v-model="draft"
         maxlength="120"
         :placeholder="t('tools.addPlaceholder')"
-        class="h-9 min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 text-sm placeholder:text-faint focus:border-accent focus:outline-none"
+        class="paper-input h-9 min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 text-sm placeholder:text-faint focus:border-accent focus:outline-none"
       />
       <button
         type="submit"
-        class="grid size-9 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted transition-colors hover:text-accent disabled:opacity-40"
+        class="ui-control grid size-9 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted transition-colors hover:text-accent disabled:opacity-40"
         :disabled="!draft.trim()"
         :aria-label="t('tools.add')"
       >

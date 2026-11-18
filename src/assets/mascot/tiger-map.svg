@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 235 230"><defs> <g id="tiger" stroke="#594238" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
+ <path d="M157 156 Q207 181 209 135 Q207 115 193 124 Q190 145 174 137" fill="#F6C76E"/><path d="m192 143 14 5m-25 1 10 12" fill="none"/>
+ <ellipse cx="109" cy="155" rx="53" ry="48" fill="#F6C76E"/><ellipse cx="108" cy="161" rx="26" ry="27" fill="#FFF6DF" stroke="none"/>
+ <path d="M69 179v25q13 9 24-1l4-12m25 0 4 13q15 7 26-2l-3-24" fill="#F6C76E"/>
+ <circle cx="54" cy="48" r="27" fill="#F6C76E"/><circle cx="159" cy="48" r="27" fill="#F6C76E"/>
+ <circle cx="54" cy="48" r="15" fill="#FFF6DF" stroke="none"/><circle cx="159" cy="48" r="15" fill="#FFF6DF" stroke="none"/>
+ <path d="M24 96Q26 40 106 39Q187 39 190 101Q194 151 108 151Q20 151 24 96Z" fill="#F6C76E"/>
+ <ellipse cx="107" cy="121" rx="62" ry="29" fill="#FFF6DF" stroke="none"/>
+ <path d="M106 42v25m-12-15h24m-20 12h16M28 85l21 5m-24 14 23 1m137-20-20 5m23 14-24 1" fill="none" stroke-width="8"/>
+ <ellipse cx="77" cy="99" rx="6" ry="9" fill="#594238" stroke="none"/><ellipse cx="138" cy="99" rx="6" ry="9" fill="#594238" stroke="none"/>
+ <path d="m104 108 7 0m-4 8q-9 14-17 2m17-2q9 14 17 2" fill="none" stroke-width="4"/>
+ <circle cx="59" cy="115" r="11" fill="#F3A395" stroke="none"/><circle cx="155" cy="115" r="11" fill="#F3A395" stroke="none"/>
+ <path d="M62 150q-24 5-17 21q12 11 25-5m78-16q24 5 17 21q-12 11-25-5" fill="#F6C76E"/>
+ </g>
+ <g id="map"><use href="#tiger"/><g stroke="#594238" stroke-width="4" stroke-linejoin="round"><path d="M52 54Q58 9 107 10Q155 10 165 54Z" fill="#F6C76E"/><path d="M50 47Q107 37 166 48L169 61Q105 50 48 61Z" fill="#FFF6DF"/><path d="M24 64Q104 31 191 66Q177 79 107 65Q47 78 24 64Z" fill="#F6C76E"/><path d="M149 39Q140 11 152 12Q160 14 159 26Q175 3 179 17Q181 31 162 43Z" fill="#ADC682"/></g><path d="m55 142 34-8 32 9 35-8v46l-35 8-32-9-34 8Z" fill="#FFF6DF" stroke="#594238" stroke-width="4"/><path d="m89 134v46m32-37v46" stroke="#C8B89B" stroke-width="2"/><path d="m62 170 12-19 10 16m45 6 9-15 12 14" fill="#ADC682"/><path d="M144 146c-15 0-10 15 0 23 10-8 15-23 0-23" fill="#F3A395"/><circle cx="144" cy="153" r="3" fill="white"/></g>
+</defs><use href="#map"/></svg>

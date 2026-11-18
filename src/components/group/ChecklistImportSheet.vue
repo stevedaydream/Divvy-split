@@ -146,14 +146,14 @@ async function apply(): Promise<void> {
         rows="5"
         maxlength="8000"
         :placeholder="t('importList.placeholder')"
-        class="w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm placeholder:text-faint focus:border-accent focus:outline-none"
+        class="paper-input w-full rounded-xl border border-border bg-surface px-3.5 py-3 text-sm placeholder:text-faint focus:border-accent focus:outline-none"
       />
 
       <div class="mt-3 flex flex-wrap gap-2">
         <div v-for="(image, i) in images" :key="image.url" class="relative size-16">
           <img :src="image.url" alt="" class="size-16 rounded-lg border border-border object-cover" />
           <button
-            class="absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-surface text-muted shadow-card hover:text-negative"
+            class="ui-control absolute -right-1.5 -top-1.5 grid size-5 place-items-center rounded-full bg-surface text-muted shadow-card hover:text-negative"
             :aria-label="t('common.delete')"
             @click="removeImage(i)"
           >
@@ -196,7 +196,7 @@ async function apply(): Promise<void> {
           <span class="min-w-0 flex-1 truncate text-sm">{{ row.text }}</span>
           <!-- Tap to move between the personal packing list and shared to-dos. -->
           <button
-            class="shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors"
+            class="ui-control shrink-0 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors"
             :class="row.list === 'packing' ? 'bg-accent-soft text-accent' : 'bg-surface-2 text-muted'"
             :aria-label="t('importList.switchList')"
             @click="row.list = row.list === 'packing' ? 'todo' : 'packing'"

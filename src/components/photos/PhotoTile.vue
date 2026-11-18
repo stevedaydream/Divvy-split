@@ -37,7 +37,7 @@ onScopeDispose(() => { generation++; observer?.disconnect(); window.removeEventL
 
 <template>
   <article ref="root" class="overflow-hidden rounded-xl border bg-surface" :class="selected ? 'border-accent ring-1 ring-accent' : 'border-border'">
-    <button type="button" class="relative grid aspect-square w-full place-items-center bg-surface-2" :aria-label="photo.name" @click="$emit('preview')">
+    <button type="button" class="ui-control relative grid aspect-square w-full place-items-center bg-surface-2" :aria-label="photo.name" @click="$emit('preview')">
       <img v-if="url" :src="url" :alt="photo.name" loading="lazy" class="h-full w-full object-cover" @error="url = ''" />
       <Image v-else class="size-8 text-faint" />
     </button>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TigerMascot from '@/components/ui/TigerMascot.vue'
 import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ImagePlus, QrCode, Trash2, X } from 'lucide-vue-next'
@@ -96,7 +97,7 @@ function clearQr(slot: QrSlot): void {
 
 <template>
   <div class="space-y-4 px-5 pb-28 pt-5">
-    <div class="flex justify-end"><button type="button" class="text-xs font-medium text-accent" @click="templatesOpen = true">{{ t('templates.title') }}</button></div>
+    <div class="tools-heading"><TigerMascot :size="72" /><div class="flex justify-end"><button type="button" class="ui-control text-xs font-medium text-accent" @click="templatesOpen = true">{{ t('templates.title') }}</button></div></div>
     <PackingTemplateSheet :open="templatesOpen" :uid="uid" :group-id="group.id" :items="packing" @close="templatesOpen = false" />
     <ChecklistCard
       :title="t('tools.packing')"
@@ -131,7 +132,7 @@ function clearQr(slot: QrSlot): void {
       @remove="remove('todo', $event)"
     />
 
-    <section class="rounded-card border border-border bg-surface p-4 shadow-card">
+    <section class="paper-card rounded-card border border-border bg-surface p-4 shadow-card">
       <div class="flex items-center gap-2">
         <QrCode class="size-4 text-muted" />
         <h2 class="text-sm font-semibold">{{ t('tools.qr') }}</h2>
@@ -143,14 +144,14 @@ function clearQr(slot: QrSlot): void {
           <p class="text-xs font-medium text-muted">{{ t(`tools.qrSlot.${slot}`) }}</p>
           <div v-if="qr[slot]" class="relative">
             <button
-              class="block w-full overflow-hidden rounded-xl border border-border bg-white"
+              class="ui-control block w-full overflow-hidden rounded-xl border border-border bg-white"
               :aria-label="t('tools.qrEnlarge')"
               @click="enlarged = slot"
             >
               <img :src="qr[slot]" :alt="t(`tools.qrSlot.${slot}`)" class="aspect-square w-full object-contain" />
             </button>
             <button
-              class="absolute right-1.5 top-1.5 grid size-7 place-items-center rounded-full bg-surface/90 text-muted shadow-card hover:text-negative"
+              class="ui-control absolute right-1.5 top-1.5 grid size-7 place-items-center rounded-full bg-surface/90 text-muted shadow-card hover:text-negative"
               :aria-label="t('common.delete')"
               @click="clearQr(slot)"
             >
@@ -182,7 +183,7 @@ function clearQr(slot: QrSlot): void {
       >
         <p class="mb-4 text-sm font-medium text-zinc-900">{{ t(`tools.qrSlot.${enlarged}`) }}</p>
         <img :src="qr[enlarged]" :alt="t(`tools.qrSlot.${enlarged}`)" class="max-h-[75dvh] w-full max-w-md object-contain" />
-        <button class="mt-6 grid size-11 place-items-center rounded-full bg-zinc-100 text-zinc-700" :aria-label="t('common.close')">
+        <button class="ui-control mt-6 grid size-11 place-items-center rounded-full bg-zinc-100 text-zinc-700" :aria-label="t('common.close')">
           <X class="size-5" />
         </button>
       </div>

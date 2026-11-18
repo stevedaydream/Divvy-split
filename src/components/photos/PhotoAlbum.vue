@@ -221,7 +221,7 @@ async function restoreBackups(): Promise<void> {
 
 <template>
   <div class="space-y-4 px-4 py-5">
-    <section class="space-y-3 rounded-card border border-border bg-surface p-4">
+    <section class="paper-card space-y-3 rounded-card border border-border bg-surface p-4">
       <h2 class="text-sm font-semibold">{{ t(group ? 'photos.sharing' : 'photos.localTitle') }}</h2>
       <p class="text-xs leading-relaxed text-muted">{{ t(group ? 'photos.sharingHint' : 'photos.localHint') }}</p>
       <p class="text-xs leading-relaxed text-muted">{{ t('photos.driveHint') }}</p>
@@ -234,7 +234,7 @@ async function restoreBackups(): Promise<void> {
       <p v-if="photoBackupError" role="alert" class="text-xs text-negative">{{ message(new Error(photoBackupError)) }}</p>
       <p v-if="!group" class="tabular text-xs text-muted">{{ t('photos.storage', { used: (storage.used / 1048576).toFixed(1), quota: (storage.quota / 1048576).toFixed(0) }) }} · {{ t(storage.persistent ? 'photos.persistent' : 'photos.notPersistent') }}</p>
       <div class="flex flex-wrap items-center gap-2">
-        <label class="text-xs text-muted">{{ t('photos.quality') }} <select v-model="quality" class="rounded-lg border border-border bg-surface p-2 text-fg"><option value="standard">{{ t('photos.standard') }}</option><option value="original">{{ t('photos.original') }}</option></select></label>
+        <label class="text-xs text-muted">{{ t('photos.quality') }} <select v-model="quality" class="paper-input rounded-lg border border-border bg-surface p-2 text-fg"><option value="standard">{{ t('photos.standard') }}</option><option value="original">{{ t('photos.original') }}</option></select></label>
         <AppButton :disabled="busy || (group && !driveConnected)" @click="uploadInput?.click()">{{ t(group ? 'photos.upload' : 'photos.addLocal') }}</AppButton>
       </div>
       <p class="text-xs text-muted">{{ t('photos.limits') }}</p>
@@ -246,18 +246,18 @@ async function restoreBackups(): Promise<void> {
     </section>
     <section v-if="backups.length" class="space-y-2 rounded-xl border border-border p-3">
       <h3 class="text-sm font-medium">{{ t('photos.driveRestore') }}</h3>
-      <button type="button" class="text-xs text-accent" @click="backupSelection = backupSelection.length === backups.length ? [] : backups.map(file => file.id)">{{ t(backupSelection.length === backups.length ? 'photos.clearSelection' : 'photos.selectAll') }}</button>
+      <button type="button" class="ui-control text-xs text-accent" @click="backupSelection = backupSelection.length === backups.length ? [] : backups.map(file => file.id)">{{ t(backupSelection.length === backups.length ? 'photos.clearSelection' : 'photos.selectAll') }}</button>
       <label v-for="file in backups" :key="file.id" class="flex items-center gap-2 text-xs"><input v-model="backupSelection" type="checkbox" :value="file.id" class="accent-accent" /><span class="truncate">{{ file.name }}</span></label>
       <AppButton :disabled="busy || !backupSelection.length" @click="restoreBackups">{{ t('photos.restoreSelected') }}</AppButton>
       <AppButton v-if="backupCursor" variant="secondary" :disabled="busy" @click="readBackups(true)">{{ t('photos.more') }}</AppButton>
     </section>
     <div class="flex flex-wrap items-center gap-3 text-xs">
-      <select v-if="!group" v-model="groupFilter" :aria-label="t('photos.groupFilter')" class="max-w-full rounded-lg border border-border bg-surface p-2"><option value="">{{ t('photos.allGroups') }}</option><option v-for="[id, name] in albumGroups" :key="id" :value="id">{{ name }}</option></select>
-      <label>{{ t('photos.date') }} <input v-model="dateFilter" type="date" class="rounded-lg border border-border bg-surface p-2" /></label>
-      <button v-if="dateFilter" type="button" class="text-accent" @click="dateFilter = ''">{{ t('photos.clearDate') }}</button>
+      <select v-if="!group" v-model="groupFilter" :aria-label="t('photos.groupFilter')" class="paper-input max-w-full rounded-lg border border-border bg-surface p-2"><option value="">{{ t('photos.allGroups') }}</option><option v-for="[id, name] in albumGroups" :key="id" :value="id">{{ name }}</option></select>
+      <label>{{ t('photos.date') }} <input v-model="dateFilter" type="date" class="paper-input rounded-lg border border-border bg-surface p-2" /></label>
+      <button v-if="dateFilter" type="button" class="ui-control text-accent" @click="dateFilter = ''">{{ t('photos.clearDate') }}</button>
       <label v-if="group" class="flex items-center gap-2"><input v-model="onlyMissing" type="checkbox" class="accent-accent" />{{ t('photos.onlyMissing') }}</label>
-      <button type="button" :disabled="busy" class="font-medium text-accent" @click="toggleAll">{{ t(selectedPhotos.length === visible.length && visible.length ? 'photos.clearSelection' : 'photos.selectAll') }}</button>
-      <button type="button" :disabled="busy" class="text-accent" @click="reload">{{ t('photos.refresh') }}</button>
+      <button type="button" :disabled="busy" class="ui-control font-medium text-accent" @click="toggleAll">{{ t(selectedPhotos.length === visible.length && visible.length ? 'photos.clearSelection' : 'photos.selectAll') }}</button>
+      <button type="button" :disabled="busy" class="ui-control text-accent" @click="reload">{{ t('photos.refresh') }}</button>
       <AppButton v-if="group && driveConnected" variant="ghost" :disabled="busy" @click="action(async () => { await authorizeSharedPhotos() })">{{ t('photos.authorize') }}</AppButton>
     </div>
     <section v-if="selectedPhotos.length" class="space-y-3 rounded-xl border border-accent/30 bg-accent/5 p-3">
@@ -268,8 +268,8 @@ async function restoreBackups(): Promise<void> {
         <AppButton v-if="!group" variant="secondary" :disabled="busy" @click="exportSelection">{{ t('photos.export') }}</AppButton>
       </div>
       <template v-if="manageable">
-        <div class="flex flex-wrap items-center gap-2 text-xs"><input v-model="editDate" type="date" :aria-label="t('photos.date')" class="rounded-lg border border-border bg-surface p-2" /><AppButton variant="secondary" :disabled="busy || !validPhotoDate(editDate)" @click="editSelection(false)">{{ t('photos.correctDate') }}</AppButton></div>
-        <div v-if="group && itinerary" class="flex flex-wrap gap-2"><select v-model="linkId" :aria-label="t('photos.link')" class="min-w-0 max-w-full rounded-lg border border-border bg-surface p-2 text-xs"><option value="">{{ t('photos.noItinerary') }}</option><option v-for="item in itinerary" :key="item.id" :value="item.id">{{ item.date }} · {{ item.title }}</option></select><AppButton variant="secondary" :disabled="busy" @click="editSelection(true)">{{ t('photos.link') }}</AppButton></div>
+        <div class="flex flex-wrap items-center gap-2 text-xs"><input v-model="editDate" type="date" :aria-label="t('photos.date')" class="paper-input rounded-lg border border-border bg-surface p-2" /><AppButton variant="secondary" :disabled="busy || !validPhotoDate(editDate)" @click="editSelection(false)">{{ t('photos.correctDate') }}</AppButton></div>
+        <div v-if="group && itinerary" class="flex flex-wrap gap-2"><select v-model="linkId" :aria-label="t('photos.link')" class="paper-input min-w-0 max-w-full rounded-lg border border-border bg-surface p-2 text-xs"><option value="">{{ t('photos.noItinerary') }}</option><option v-for="item in itinerary" :key="item.id" :value="item.id">{{ item.date }} · {{ item.title }}</option></select><AppButton variant="secondary" :disabled="busy" @click="editSelection(true)">{{ t('photos.link') }}</AppButton></div>
         <label v-if="!group" class="flex items-center gap-2 text-xs"><input v-model="removeBackup" type="checkbox" class="accent-accent" />{{ t('photos.removeBackup') }}</label>
         <AppButton variant="danger" :disabled="busy || photoBackupBusy || (!group && removeBackup && !driveConnected)" @click="removeSelection">{{ t('common.delete') }}</AppButton>
       </template>

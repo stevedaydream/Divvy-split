@@ -108,7 +108,7 @@ function token(name: string, fallback: string): string {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback
 }
 const muted = computed(() => token('--c-faint', '#a1a1aa'))
-const accent = computed(() => token('--c-accent', '#0d9488'))
+const accent = computed(() => token('--c-accent-ink', '#245F78'))
 
 const daySeries = computed<ChartSeries[]>(() => {
   const shape = (values: number[]) => (dayChart.value === 'cumulative' ? cumulative(values) : values)
@@ -149,7 +149,7 @@ const DAY_CHARTS = [
       <button
         v-for="option in (['all', 'mine'] as const)"
         :key="option"
-        class="rounded-lg py-2 text-sm font-medium transition-colors"
+        class="ui-control rounded-lg py-2 text-sm font-medium transition-colors"
         :class="scope === option ? 'bg-surface text-fg shadow-card' : 'text-muted'"
         :aria-pressed="scope === option"
         @click="scope = option"
@@ -166,7 +166,7 @@ const DAY_CHARTS = [
     />
 
     <template v-else>
-      <section class="rounded-card border border-border bg-surface p-5 shadow-card">
+      <section class="paper-card rounded-card border border-border bg-surface p-5 shadow-card">
         <p class="text-xs font-medium text-muted">
           {{ shared && scope === 'mine' ? t('stats.myTotal') : t('stats.total') }}
         </p>
@@ -184,14 +184,14 @@ const DAY_CHARTS = [
         </p>
       </section>
 
-      <section class="rounded-card border border-border bg-surface p-5 shadow-card">
+      <section class="paper-card rounded-card border border-border bg-surface p-5 shadow-card">
         <header class="mb-4 flex items-center justify-between">
           <h2 class="text-sm font-semibold">{{ t('stats.byCategory') }}</h2>
           <div class="flex gap-1" role="group" :aria-label="t('stats.chartType')">
             <button
               v-for="option in CATEGORY_CHARTS"
               :key="option.value"
-              class="grid size-8 place-items-center rounded-lg transition-colors"
+              class="ui-control grid size-8 place-items-center rounded-lg transition-colors"
               :class="categoryChart === option.value ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-2'"
               :aria-label="t(option.label)"
               :aria-pressed="categoryChart === option.value"
@@ -222,14 +222,14 @@ const DAY_CHARTS = [
         </ul>
       </section>
 
-      <section class="rounded-card border border-border bg-surface p-5 shadow-card">
+      <section class="paper-card rounded-card border border-border bg-surface p-5 shadow-card">
         <header class="mb-4 flex items-center justify-between">
           <h2 class="text-sm font-semibold">{{ t('stats.byDay') }}</h2>
           <div class="flex gap-1" role="group" :aria-label="t('stats.chartType')">
             <button
               v-for="option in DAY_CHARTS"
               :key="option.value"
-              class="grid size-8 place-items-center rounded-lg transition-colors"
+              class="ui-control grid size-8 place-items-center rounded-lg transition-colors"
               :class="dayChart === option.value ? 'bg-accent-soft text-accent' : 'text-muted hover:bg-surface-2'"
               :aria-label="t(option.label)"
               :aria-pressed="dayChart === option.value"

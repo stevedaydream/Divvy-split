@@ -15,17 +15,17 @@ const TABS = [
 
 <template>
   <nav
-    class="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-surface/90 backdrop-blur-lg pb-[env(safe-area-inset-bottom)]"
+    class="bottom-nav fixed inset-x-0 bottom-0 z-40 pb-[env(safe-area-inset-bottom)]"
   >
     <div class="mx-auto flex max-w-md">
       <RouterLink
         v-for="tab in TABS"
         :key="tab.to"
         :to="tab.to"
-        class="flex flex-1 flex-col items-center gap-1 py-2.5 text-[11px] font-medium text-muted transition-colors"
-        active-class="!text-accent"
+        class="bottom-nav__item flex flex-1 flex-col items-center gap-1 py-2.5 text-xs font-semibold text-muted transition-colors"
+        active-class="bottom-nav__item--active"
       >
-        <component :is="tab.icon" class="size-5" :stroke-width="1.75" />
+        <component :is="tab.icon" class="size-5" :stroke-width="2.25" />
         {{ t(tab.key) }}
       </RouterLink>
     </div>

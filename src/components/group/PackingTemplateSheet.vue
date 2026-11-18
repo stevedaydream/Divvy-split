@@ -77,7 +77,7 @@ async function remove(template: PackingTemplate): Promise<void> {
     <p v-else-if="!templates.length" class="mt-4 text-sm text-muted">{{ t('templates.empty') }}</p>
     <div v-else class="mt-5 space-y-2">
       <article v-for="template in templates" :key="template.id" class="flex items-center gap-2 rounded-xl border border-border p-3">
-        <button type="button" class="min-w-0 flex-1 text-left" :disabled="saving" @click="select(template)"><span class="block truncate text-sm font-medium">{{ template.name }}</span><span class="text-xs text-muted">{{ t('templates.count', { count: template.texts.length }) }}</span></button>
+        <button type="button" class="ui-control min-w-0 flex-1 text-left" :disabled="saving" @click="select(template)"><span class="block truncate text-sm font-medium">{{ template.name }}</span><span class="text-xs text-muted">{{ t('templates.count', { count: template.texts.length }) }}</span></button>
         <AppButton variant="ghost" size="sm" :disabled="saving" @click="remove(template)">{{ t('common.delete') }}</AppButton>
       </article>
     </div>

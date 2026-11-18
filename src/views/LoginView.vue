@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TigerMascot from '@/components/ui/TigerMascot.vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
@@ -53,14 +54,12 @@ async function signIn(): Promise<void> {
 </script>
 
 <template>
-  <main class="flex min-h-dvh flex-col px-6">
+  <main class="login-page flex min-h-dvh flex-col px-6">
     <div class="mx-auto my-auto w-full max-w-xs pt-12 text-center">
-      <div class="mx-auto grid size-14 place-items-center rounded-2xl bg-accent text-accent-fg">
-        <span class="text-2xl font-semibold">D</span>
-      </div>
+      <TigerMascot :size="172" class="mx-auto" />
 
-      <h1 class="mt-7 text-2xl font-semibold tracking-tight">Divvy</h1>
-      <p class="mt-2 text-sm leading-relaxed text-muted">{{ t('login.tagline') }}</p>
+      <h1 class="mt-5 text-4xl font-bold tracking-tight">Divvy</h1>
+      <p class="mt-3 text-base leading-relaxed text-muted">{{ t('login.tagline') }}</p>
 
       <section
         v-if="embedded"
@@ -78,7 +77,7 @@ async function signIn(): Promise<void> {
         </a>
         <button
           v-else
-          class="mt-3 flex h-10 w-full items-center justify-center rounded-xl border border-border bg-surface text-sm font-medium"
+          class="ui-control mt-3 flex h-10 w-full items-center justify-center rounded-xl border border-border bg-surface text-sm font-medium"
           @click="copyLink"
         >
           {{ t('login.copyLink') }}

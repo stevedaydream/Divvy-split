@@ -26,7 +26,7 @@ function toggle(item: ExpenseItemInput, uid: string): void {
     <article v-for="(item, index) in items" :key="item.key" class="space-y-3 rounded-xl border border-border bg-surface-2 p-3">
       <header class="flex items-center justify-between">
         <h3 class="text-xs font-medium text-muted">{{ t('itemized.item', { n: index + 1 }) }}</h3>
-        <button type="button" class="grid size-8 place-items-center rounded-full text-muted hover:text-negative" :aria-label="t('itemized.removeItem', { n: index + 1 })" @click="items.splice(index, 1)">
+        <button type="button" class="ui-control grid size-8 place-items-center rounded-full text-muted hover:text-negative" :aria-label="t('itemized.removeItem', { n: index + 1 })" @click="items.splice(index, 1)">
           <Trash2 class="size-4" />
         </button>
       </header>
@@ -36,19 +36,19 @@ function toggle(item: ExpenseItemInput, uid: string): void {
       </div>
       <label class="flex items-center gap-3 text-xs text-muted">
         {{ t('itemized.payer') }}
-        <select v-model="item.payerId" class="h-9 min-w-0 flex-1 rounded-lg border border-border bg-surface px-2 text-sm text-fg">
+        <select v-model="item.payerId" class="paper-input h-9 min-w-0 flex-1 rounded-lg border border-border bg-surface px-2 text-sm text-fg">
           <option v-for="uid in group.ledgerIds" :key="uid" :value="uid">{{ group.members[uid]?.nickname }}</option>
         </select>
       </label>
       <div class="flex items-center justify-between text-xs">
         <span class="font-medium text-muted">{{ t('group.splitWith') }}</span>
         <div class="flex gap-3">
-          <button type="button" class="text-accent" @click="item.participantIds = [uid]">{{ t('group.justMe') }}</button>
-          <button type="button" class="text-accent" @click="item.participantIds = [...group.ledgerIds]">{{ t('group.splitAll') }}</button>
+          <button type="button" class="ui-control text-accent" @click="item.participantIds = [uid]">{{ t('group.justMe') }}</button>
+          <button type="button" class="ui-control text-accent" @click="item.participantIds = [...group.ledgerIds]">{{ t('group.splitAll') }}</button>
         </div>
       </div>
       <div class="flex flex-wrap gap-2">
-        <button v-for="uid in group.ledgerIds" :key="uid" type="button" class="rounded-lg border px-3 py-1.5 text-xs" :class="item.participantIds.includes(uid) ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'" :aria-pressed="item.participantIds.includes(uid)" @click="toggle(item, uid)">
+        <button v-for="uid in group.ledgerIds" :key="uid" type="button" class="ui-control rounded-lg border px-3 py-1.5 text-xs" :class="item.participantIds.includes(uid) ? 'border-accent bg-accent-soft text-accent' : 'border-border text-muted'" :aria-pressed="item.participantIds.includes(uid)" @click="toggle(item, uid)">
           {{ group.members[uid]?.nickname }}
         </button>
       </div>

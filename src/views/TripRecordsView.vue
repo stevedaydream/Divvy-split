@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import { onScopeDispose, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
@@ -65,8 +66,8 @@ async function remove(): Promise<void> {
       <p class="text-xs leading-relaxed text-muted">{{ t('travel.recordHint') }}</p>
       <p v-if="error && !selected" role="alert" class="text-sm text-negative">{{ error }}</p>
       <AppSkeleton v-if="loading" :rows="3" />
-      <p v-else-if="!records.length" class="py-8 text-center text-sm text-muted">{{ t('travel.noRecords') }}</p>
-      <button v-for="record in records" :key="record.id" type="button" class="block w-full rounded-card border border-border bg-surface p-4 text-left shadow-card" @click="open(record)">
+      <AppEmptyState v-else-if="!records.length" mascot :title="t('travel.noRecords')" />
+      <button v-for="record in records" :key="record.id" type="button" class="paper-card ui-control block w-full rounded-card border border-border bg-surface p-4 text-left shadow-card" @click="open(record)">
         <h2 class="text-sm font-semibold">{{ record.name }}</h2>
         <p class="mt-1 text-xs text-muted">{{ placeLabel(record.location, record.destination, locale) }} · {{ record.startDate }}{{ record.endDate ? ` → ${record.endDate}` : '' }}</p>
         <p class="mt-1 text-xs text-faint">{{ t('travel.preview', { count: record.items.length }) }}</p>
@@ -88,7 +89,7 @@ async function remove(): Promise<void> {
         <section class="mt-5 space-y-3 border-t border-border pt-4">
           <h3 class="text-sm font-medium">{{ t('travel.copy') }}</h3>
           <label class="block space-y-1 text-xs text-muted"><span>{{ t('groups.name') }}</span><AppInput v-model="name" maxlength="120" /></label>
-          <label class="block space-y-1 text-xs text-muted"><span>{{ t('itinerary.startDate') }}</span><input v-model="start" type="date" class="h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-fg" /></label>
+          <label class="block space-y-1 text-xs text-muted"><span>{{ t('itinerary.startDate') }}</span><input v-model="start" type="date" class="paper-input h-11 w-full rounded-xl border border-border bg-surface px-3 text-sm text-fg" /></label>
           <p class="text-xs leading-relaxed text-muted">{{ t('travel.copyHint') }}</p>
           <AppButton block :loading="saving" :disabled="!name.trim() || !start || selected.items.length > 450" @click="copy">{{ t('travel.copy') }}</AppButton>
           <AppButton variant="ghost" block :disabled="saving" @click="remove">{{ t('travel.deleteRecord') }}</AppButton>

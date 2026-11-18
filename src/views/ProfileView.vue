@@ -80,8 +80,8 @@ async function signOut(): Promise<void> {
     <TopBar :title="t('profile.title')" />
 
     <div class="space-y-6 px-5 py-5">
-      <RouterLink :to="{ name: 'photos' }" class="block rounded-card border border-border bg-surface p-4 text-sm font-medium text-accent">{{ t('photos.mine') }}</RouterLink>
-      <section class="flex items-center gap-4 rounded-card border border-border bg-surface p-5 shadow-card">
+      <RouterLink :to="{ name: 'photos' }" class="paper-card block rounded-card border border-border bg-surface p-4 text-sm font-medium text-accent">{{ t('photos.mine') }}</RouterLink>
+      <section class="paper-card flex items-center gap-4 rounded-card border border-border bg-surface p-5 shadow-card">
         <AppAvatar :name="profile?.nickname ?? '?'" size="lg" />
         <div class="min-w-0">
           <h2 class="truncate text-base font-semibold">{{ profile?.nickname }}</h2>
@@ -89,7 +89,7 @@ async function signOut(): Promise<void> {
         </div>
       </section>
 
-      <section class="overflow-hidden rounded-card border border-border bg-surface shadow-card">
+      <section class="paper-card overflow-hidden rounded-card border border-border bg-surface shadow-card">
         <h3 class="border-b border-border px-5 py-3 text-xs font-medium text-muted">
           {{ t('profile.payment') }}
         </h3>
@@ -109,7 +109,7 @@ async function signOut(): Promise<void> {
 
           <button
             v-if="profile?.payment?.bankAccount"
-            class="grid size-9 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+            class="ui-control grid size-9 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
             :aria-label="revealed ? t('profile.hide') : t('profile.reveal')"
             @click="revealed = !revealed"
           >
@@ -131,13 +131,13 @@ async function signOut(): Promise<void> {
         <p class="mt-1.5 text-xs leading-relaxed text-muted">{{ t('profile.friendsHint') }}</p>
       </section>
 
-      <section class="overflow-hidden rounded-card border border-border bg-surface shadow-card">
+      <section class="paper-card overflow-hidden rounded-card border border-border bg-surface shadow-card">
         <h3 class="border-b border-border px-5 py-3 text-xs font-medium text-muted">
           {{ t('profile.preferences') }}
         </h3>
 
         <button
-          class="flex w-full items-center justify-between border-b border-border px-5 py-4 text-left transition-colors hover:bg-surface-2"
+          class="ui-control flex w-full items-center justify-between border-b border-border px-5 py-4 text-left transition-colors hover:bg-surface-2"
           @click="pickerOpen = true"
         >
           <span class="text-sm">{{ t('profile.homeCurrency') }}</span>
@@ -153,7 +153,7 @@ async function signOut(): Promise<void> {
             <button
               v-for="option in (['en', 'zh-TW'] as const)"
               :key="option"
-              class="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+              class="ui-control rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
               :class="locale === option ? 'bg-surface text-fg shadow-card' : 'text-muted'"
               @click="chooseLocale(option)"
             >
@@ -168,7 +168,7 @@ async function signOut(): Promise<void> {
             <button
               v-for="option in (['light', 'dark', 'system'] as const)"
               :key="option"
-              class="rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
+              class="ui-control rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
               :class="themeChoice === option ? 'bg-surface text-fg shadow-card' : 'text-muted'"
               @click="chooseTheme(option)"
             >

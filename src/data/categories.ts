@@ -9,12 +9,12 @@ export interface CategoryMeta {
 
 /** The fixed list, in display order. Labels live in i18n under `category.<code>`. */
 export const CATEGORIES: CategoryMeta[] = [
-  { code: 'food', emoji: '🍜', color: '#f59e0b' },
-  { code: 'transport', emoji: '🚃', color: '#3b82f6' },
-  { code: 'lodging', emoji: '🏨', color: '#8b5cf6' },
-  { code: 'shopping', emoji: '🛍️', color: '#ec4899' },
-  { code: 'fun', emoji: '🎫', color: '#10b981' },
-  { code: 'other', emoji: '📦', color: '#94a3b8' },
+  { code: 'food', emoji: '🍜', color: '#B47B24' },
+  { code: 'transport', emoji: '🚃', color: '#3E7D99' },
+  { code: 'lodging', emoji: '🏨', color: '#8A6D9C' },
+  { code: 'shopping', emoji: '🛍️', color: '#B86D7A' },
+  { code: 'fun', emoji: '🎫', color: '#587C48' },
+  { code: 'other', emoji: '📦', color: '#82776B' },
 ]
 
 const CODES = new Set<string>(CATEGORIES.map((c) => c.code))
@@ -60,5 +60,5 @@ export function guessCategory(title: string): EntryCategory | null {
 }
 
 export function categoryColor(code: EntryCategory): string {
-  return CATEGORIES.find((c) => c.code === code)?.color ?? '#94a3b8'
+  return CATEGORIES.find((c) => c.code === code)?.color ?? '#82776B'
 }

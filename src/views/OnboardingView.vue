@@ -118,7 +118,7 @@ async function submit(): Promise<void> {
       <AppField :label="t('onboarding.country')">
         <button
           type="button"
-          class="flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors hover:border-border-strong"
+          class="ui-control flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors hover:border-border-strong"
           @click="countryPickerOpen = true"
         >
           <span :class="country ? 'font-medium' : 'text-faint'">
@@ -132,7 +132,7 @@ async function submit(): Promise<void> {
         <div class="flex gap-2">
           <button
             type="button"
-            class="flex h-11 min-w-0 flex-1 items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors hover:border-border-strong"
+            class="ui-control flex h-11 min-w-0 flex-1 items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors hover:border-border-strong"
             @click="pickerOpen = true"
           >
             <span class="font-medium">{{ currency }}</span>
@@ -145,7 +145,7 @@ async function submit(): Promise<void> {
         </div>
       </AppField>
 
-      <section class="rounded-card border border-border bg-surface-2 p-4">
+      <section class="paper-card rounded-card border border-border bg-surface-2 p-4">
         <h2 class="text-sm font-medium">{{ t('onboarding.paymentTitle') }}</h2>
         <p class="mt-1 text-xs leading-relaxed text-muted">{{ t('onboarding.paymentHint') }}</p>
 

@@ -185,11 +185,11 @@ function removeTarget(code: CurrencyCode): void {
 </script>
 
 <template>
-  <AppShell nav>
+  <AppShell nav class="calculator-shell">
     <TopBar :title="t('calculator.title')">
       <template #actions>
         <button
-          class="grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+          class="ui-control grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
           :aria-label="t('calculator.locate')"
           :title="t('calculator.locate')"
           :disabled="locating"
@@ -198,14 +198,14 @@ function removeTarget(code: CurrencyCode): void {
           <MapPin class="size-4" :class="locating ? 'animate-pulse' : ''" />
         </button>
         <button
-          class="grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+          class="ui-control grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
           :aria-label="t('currency.refresh')"
           @click="rates.load(true)"
         >
           <RefreshCw class="size-4" :class="rates.loading ? 'animate-spin' : ''" />
         </button>
         <button
-          class="grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+          class="ui-control grid size-9 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-fg"
           :aria-label="t('calculator.history')"
           @click="historyOpen = true"
         >
@@ -217,7 +217,7 @@ function removeTarget(code: CurrencyCode): void {
     <section class="px-5 pb-6 pt-5">
       <div class="flex items-end justify-between">
         <button
-          class="rounded-lg px-2 py-1 text-left transition-colors hover:bg-surface-2"
+          class="ui-control rounded-lg px-2 py-1 text-left transition-colors hover:bg-surface-2"
           @click="pickerMode = 'base'"
         >
           <span class="block text-xs text-muted">{{ t('currency.base') }}</span>
@@ -226,7 +226,7 @@ function removeTarget(code: CurrencyCode): void {
         <p class="tabular truncate pl-4 text-xs text-faint">{{ expression }}</p>
       </div>
 
-      <p class="tabular mt-1 truncate text-right text-5xl font-light tracking-tight">
+      <p class="tabular mt-1 truncate text-right text-5xl font-semibold tracking-tight">
         {{ display }}
       </p>
 
@@ -238,15 +238,15 @@ function removeTarget(code: CurrencyCode): void {
       </p>
     </section>
 
-    <section class="space-y-2 px-5 pb-6">
+    <section class="calculator-results space-y-2 px-5 pb-6">
       <TransitionGroup name="list" tag="div" class="relative space-y-2">
         <div
           v-for="target in targets"
           :key="target"
-          class="flex items-center gap-3 rounded-card border border-border bg-surface p-4 shadow-card"
+          class="paper-card flex items-center gap-3 rounded-card border border-border bg-surface p-4 shadow-card"
         >
           <button
-            class="flex min-w-0 flex-1 items-center gap-3 text-left"
+            class="ui-control flex min-w-0 flex-1 items-center gap-3 text-left"
             :aria-label="t('calculator.swap')"
             @click="swapToBase(target)"
           >
@@ -263,7 +263,7 @@ function removeTarget(code: CurrencyCode): void {
 
           <!-- The home currency is always pinned first, so it cannot be removed. -->
           <button
-            class="grid size-8 shrink-0 place-items-center rounded-full text-faint transition-colors hover:bg-negative-soft hover:text-negative"
+            class="ui-control grid size-8 shrink-0 place-items-center rounded-full text-faint transition-colors hover:bg-negative-soft hover:text-negative"
             :class="target === home ? 'invisible' : ''"
             :disabled="target === home"
             :aria-label="t('calculator.remove')"
@@ -275,7 +275,7 @@ function removeTarget(code: CurrencyCode): void {
       </TransitionGroup>
 
       <button
-        class="flex w-full items-center justify-center gap-2 rounded-card border border-dashed border-border py-3.5 text-sm text-muted transition-colors hover:border-accent hover:text-accent"
+        class="ui-control flex w-full items-center justify-center gap-2 rounded-card border border-dashed border-border py-3.5 text-sm text-muted transition-colors hover:border-accent hover:text-accent"
         @click="pickerMode = 'add'"
       >
         <Plus class="size-4" />
@@ -283,29 +283,29 @@ function removeTarget(code: CurrencyCode): void {
       </button>
     </section>
 
-    <section class="sticky bottom-20 mx-5 mb-4 grid grid-cols-4 gap-2 rounded-sheet border border-border bg-surface p-3 shadow-float">
-      <button class="h-12 rounded-xl text-sm font-medium text-negative transition-colors hover:bg-surface-2" @click="clearAll">
+    <section class="calculator-keypad mx-5 mb-4 grid grid-cols-4 gap-2 rounded-sheet border border-border bg-surface p-3 shadow-float">
+      <button class="ui-control h-12 rounded-xl text-sm font-medium text-negative transition-colors hover:bg-surface-2" @click="clearAll">
         AC
       </button>
-      <button class="grid h-12 place-items-center rounded-xl transition-colors hover:bg-surface-2" :aria-label="'Backspace'" @click="backspace">
+      <button class="ui-control grid h-12 place-items-center rounded-xl transition-colors hover:bg-surface-2" :aria-label="'Backspace'" @click="backspace">
         <Delete class="size-4" />
       </button>
-      <button class="h-12 rounded-xl text-lg text-accent transition-colors hover:bg-accent-soft" @click="appendOperator('/')">÷</button>
-      <button class="h-12 rounded-xl text-lg text-accent transition-colors hover:bg-accent-soft" @click="appendOperator('*')">×</button>
+      <button class="ui-control h-12 rounded-xl text-lg text-accent transition-colors hover:bg-accent-soft" @click="appendOperator('/')">÷</button>
+      <button class="ui-control h-12 rounded-xl text-lg text-accent transition-colors hover:bg-accent-soft" @click="appendOperator('*')">×</button>
 
-      <button v-for="d in ['7', '8', '9']" :key="d" class="h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit(d)">{{ d }}</button>
-      <button class="h-12 rounded-xl text-lg text-accent transition-colors hover:bg-accent-soft" @click="appendOperator('-')">−</button>
+      <button v-for="d in ['7', '8', '9']" :key="d" class="ui-control h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit(d)">{{ d }}</button>
+      <button class="ui-control h-12 rounded-xl text-lg text-accent transition-colors hover:bg-accent-soft" @click="appendOperator('-')">−</button>
 
-      <button v-for="d in ['4', '5', '6']" :key="d" class="h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit(d)">{{ d }}</button>
-      <button class="h-12 rounded-xl text-lg text-accent transition-colors hover:bg-accent-soft" @click="appendOperator('+')">+</button>
+      <button v-for="d in ['4', '5', '6']" :key="d" class="ui-control h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit(d)">{{ d }}</button>
+      <button class="ui-control h-12 rounded-xl text-lg text-accent transition-colors hover:bg-accent-soft" @click="appendOperator('+')">+</button>
 
       <div class="col-span-3 grid grid-cols-3 gap-2">
-        <button v-for="d in ['1', '2', '3']" :key="d" class="h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit(d)">{{ d }}</button>
-        <button class="col-span-2 h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit('0')">0</button>
-        <button class="h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit('.')">.</button>
+        <button v-for="d in ['1', '2', '3']" :key="d" class="ui-control h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit(d)">{{ d }}</button>
+        <button class="ui-control col-span-2 h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit('0')">0</button>
+        <button class="ui-control h-12 rounded-xl text-lg transition-colors hover:bg-surface-2" @click="appendDigit('.')">.</button>
       </div>
 
-      <button class="row-span-2 h-full rounded-xl bg-accent text-xl text-accent-fg transition-transform active:scale-95" @click="calculate">
+      <button class="ui-control row-span-2 h-full rounded-xl bg-accent text-xl text-accent-fg transition-transform active:scale-95" @click="calculate">
         =
       </button>
     </section>
@@ -318,7 +318,7 @@ function removeTarget(code: CurrencyCode): void {
       <ul v-else class="-mx-2 space-y-1">
         <li v-for="(item, index) in history" :key="index">
           <button
-            class="w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
+            class="ui-control w-full rounded-xl px-3 py-2.5 text-left transition-colors hover:bg-surface-2"
             @click="recall(item)"
           >
             <span class="tabular block truncate font-mono text-xs text-faint">{{ item.expression }}</span>
@@ -332,7 +332,7 @@ function removeTarget(code: CurrencyCode): void {
 
       <template v-if="history.length" #footer>
         <button
-          class="w-full rounded-xl py-2.5 text-sm font-medium text-negative transition-colors hover:bg-negative-soft"
+          class="ui-control w-full rounded-xl py-2.5 text-sm font-medium text-negative transition-colors hover:bg-negative-soft"
           @click="history = []"
         >
           {{ t('calculator.clearHistory') }}

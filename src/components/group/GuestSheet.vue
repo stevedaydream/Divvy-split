@@ -132,10 +132,10 @@ async function claim(id: string): Promise<void> {
             <UserCheck class="size-4" />{{ t('guest.claim') }}
           </AppButton>
           <template v-if="editable && !claiming">
-            <button type="button" class="grid size-8 place-items-center rounded-lg text-muted hover:text-fg" :aria-label="t('common.edit')" @click="startRename(id)">
+            <button type="button" class="ui-control grid size-8 place-items-center rounded-lg text-muted hover:text-fg" :aria-label="t('common.edit')" @click="startRename(id)">
               <Pencil class="size-4" />
             </button>
-            <button type="button" class="grid size-8 place-items-center rounded-lg text-muted hover:text-negative" :aria-label="t('common.delete')" @click="remove(id)">
+            <button type="button" class="ui-control grid size-8 place-items-center rounded-lg text-muted hover:text-negative" :aria-label="t('common.delete')" @click="remove(id)">
               <Trash2 class="size-4" />
             </button>
           </template>

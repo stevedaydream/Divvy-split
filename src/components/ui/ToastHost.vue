@@ -23,7 +23,7 @@ const TONES = {
         <button
           v-for="toast in toasts"
           :key="toast.id"
-          class="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-left shadow-float"
+          class="ui-control pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border border-border bg-surface px-4 py-3 text-left shadow-float"
           @click="dismiss(toast.id)"
         >
           <component :is="ICONS[toast.tone]" class="mt-0.5 size-4 shrink-0" :class="TONES[toast.tone]" />

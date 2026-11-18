@@ -33,7 +33,7 @@ function balanceOf(uid: string): number {
        overflow-x-auto would otherwise clip at the top. -->
   <div class="no-scrollbar -mx-5 flex gap-4 overflow-x-auto px-5 pt-1 pb-1">
     <button
-      class="flex w-16 shrink-0 flex-col items-center gap-1.5"
+      class="ui-control flex w-16 shrink-0 flex-col items-center gap-1.5"
       @click="emit('select', 'all')"
     >
       <AppAvatar :name="$t('group.everyone')" :active="selected === 'all'" />
@@ -43,7 +43,7 @@ function balanceOf(uid: string): number {
     <button
       v-for="uid in group.ledgerIds"
       :key="uid"
-      class="flex w-16 shrink-0 flex-col items-center gap-1.5"
+      class="ui-control flex w-16 shrink-0 flex-col items-center gap-1.5"
       @click="emit('select', uid)"
     >
       <AppAvatar :name="nameOf(uid)" :active="selected === uid" />
@@ -61,7 +61,7 @@ function balanceOf(uid: string): number {
 
     <button
       v-if="canManage"
-      class="flex w-16 shrink-0 flex-col items-center gap-1.5"
+      class="ui-control flex w-16 shrink-0 flex-col items-center gap-1.5"
       :aria-label="$t('guest.title')"
       @click="emit('manage')"
     >

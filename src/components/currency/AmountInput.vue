@@ -35,7 +35,7 @@ function onInput(event: Event): void {
 <template>
   <div class="flex items-center justify-center gap-3 border-b border-border py-3">
     <button
-      class="flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+      class="ui-control flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-fg"
       @click="emit('pick-currency')"
     >
       {{ currency }}

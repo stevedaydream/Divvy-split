@@ -20,7 +20,7 @@ const hue = computed(() => {
 
 <template>
   <span
-    class="grid shrink-0 place-items-center rounded-full font-semibold transition-all"
+    class="grid shrink-0 place-items-center rounded-full border-2 border-border-strong font-semibold transition-all"
     :class="[SIZES[size], active ? 'ring-2 ring-accent ring-offset-2 ring-offset-bg' : '']"
     :style="{
       backgroundColor: `oklch(var(--avatar-bg) ${hue})`,
