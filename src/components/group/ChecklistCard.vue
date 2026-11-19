@@ -39,8 +39,14 @@ function submit(): void {
 
 <template>
   <section class="paper-card rounded-card border border-border bg-surface p-4 shadow-card">
-    <header class="flex items-baseline justify-between">
-      <h2 class="text-sm font-semibold">{{ title }}</h2>
+    <header class="flex flex-wrap items-center justify-between gap-x-3">
+      <div class="flex min-w-0 items-center gap-2">
+        <slot name="illustration" />
+        <div class="min-w-0">
+          <h2 class="text-sm font-semibold">{{ title }}</h2>
+          <p class="mt-0.5 text-[11px] text-faint">{{ hint }}</p>
+        </div>
+      </div>
       <span class="flex items-center gap-3">
         <span v-if="items.length" class="tabular text-xs text-muted">{{ done }} / {{ items.length }}</span>
         <button
@@ -52,7 +58,6 @@ function submit(): void {
         </button>
       </span>
     </header>
-    <p class="mt-0.5 text-[11px] text-faint">{{ hint }}</p>
 
     <ul v-if="items.length" class="mt-3 space-y-0.5">
       <li v-for="item in items" :key="item.id" class="group flex items-center gap-2">

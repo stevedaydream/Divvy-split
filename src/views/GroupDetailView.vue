@@ -2,12 +2,14 @@
 import { computed, onMounted, ref, toRef, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { CircleCheck, HandCoins, Plus, Receipt, UserPlus } from 'lucide-vue-next'
+import { CircleCheck, HandCoins, Plus, UserPlus } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppShell from '@/components/layout/AppShell.vue'
 import TopBar from '@/components/layout/TopBar.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import AppSkeleton from '@/components/ui/AppSkeleton.vue'
+import TripSticker from '@/components/ui/TripSticker.vue'
+import GroupTabs, { type GroupTab } from '@/components/group/GroupTabs.vue'
 import EntryRow from '@/components/group/EntryRow.vue'
 import EntrySheet from '@/components/group/EntrySheet.vue'
 import AiGuideSheet from '@/components/group/AiGuideSheet.vue'
@@ -68,8 +70,6 @@ onMounted(() => {
   void rates.load()
 })
 
-type GroupTab = 'itinerary' | 'ledger' | 'stats' | 'tools' | 'photos'
-const TABS: GroupTab[] = ['itinerary', 'ledger', 'stats', 'tools', 'photos']
 const tab = ref<GroupTab>('ledger')
 const photoItinerary = ref('')
 function openItemPhotos(item: ItineraryItem): void { photoItinerary.value = item.id; tab.value = 'photos' }
@@ -81,7 +81,7 @@ watch(group, (next) => {
   if (tabChosen || !next) return
   tabChosen = true
   tab.value = defaultTab(tripPhase(next.startDate, next.endDate, todayIso()))
-  if (route.query.tab === 'photos') tab.value = 'photos'
+  if (route.query.tab === 'photos' || route.query.tab === 'ledger') tab.value = route.query.tab
   if (route.query.close === '1') closeSheetOpen.value = true
   // Fresh from an invite link: offer to take over a guest who stood in for them.
   if (route.query.claim === '1' && activeGuestIds(next.guests).length
@@ -297,24 +297,7 @@ function copyInvite(): void {
       back
     >
       <template v-if="group" #below>
-        <nav class="flex gap-1 px-4" role="tablist">
-          <button
-            v-for="option in TABS"
-            :key="option"
-            role="tab"
-            class="ui-control relative flex-1 py-2.5 text-sm font-medium transition-colors"
-            :class="tab === option ? 'text-fg' : 'text-muted hover:text-fg'"
-            :aria-selected="tab === option"
-            @click="tab = option; photoItinerary = ''"
-          >
-            {{ $t(`group.tabs.${option}`) }}
-            <span
-              v-if="tab === option"
-              class="absolute inset-x-6 -bottom-px h-0.5 rounded-full bg-accent"
-              aria-hidden="true"
-            />
-          </button>
-        </nav>
+        <GroupTabs :active="tab" @select="tab = $event; photoItinerary = ''" />
       </template>
     </TopBar>
 
@@ -411,10 +394,14 @@ function copyInvite(): void {
       <section class="px-5 pb-28">
         <AppEmptyState
           v-if="!visibleEntries.length"
-          :icon="Receipt"
           :title="$t('group.noEntries')"
           :description="$t('group.noEntriesHint')"
-        />
+        >
+          <template #illustration><TripSticker pose="ledger-entry" :size="96" /></template>
+          <AppButton v-if="!entries.length && !group.archived && !error" @click="openAdd">
+            {{ t('group.firstEntry') }}
+          </AppButton>
+        </AppEmptyState>
 
         <div v-else class="space-y-5">
           <section v-for="day in entryDays" :key="day.date">
@@ -443,7 +430,7 @@ function copyInvite(): void {
       </template>
 
       <button
-        v-if="tab !== 'tools' && tab !== 'photos' && !group.archived"
+        v-if="tab !== 'tools' && tab !== 'photos' && !group.archived && (tab !== 'ledger' || entries.length || error)"
         class="ui-control fixed bottom-6 right-5 z-30 grid size-13 place-items-center rounded-full bg-accent text-accent-fg shadow-float transition-transform active:scale-95"
         :aria-label="tab === 'itinerary' ? $t('itinerary.addSpot') : $t('group.addExpense')"
         @click="onFab"

@@ -5,6 +5,8 @@ import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import AppButton from '@/components/ui/AppButton.vue'
 import AppFooter from '@/components/layout/AppFooter.vue'
+import TripSticker from '@/components/ui/TripSticker.vue'
+import { returnPath, returnsToInvite } from '@/router/returnPath'
 import { externalBrowserUrl, inAppBrowser } from '@/lib/browserEnv'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
@@ -16,6 +18,7 @@ const route = useRoute()
 const toast = useToast()
 
 const signingIn = ref(false)
+const invited = computed(() => returnsToInvite(router, route.query.next))
 
 // Google blocks sign-in inside apps' built-in browsers (LINE, Facebook, ...).
 const embedded = inAppBrowser(navigator.userAgent)
@@ -43,7 +46,7 @@ async function signIn(): Promise<void> {
   try {
     // A redirect leaves the page; keep the spinner until it does.
     if ((await auth.signIn()) === 'redirecting') return
-    const next = typeof route.query.next === 'string' ? route.query.next : '/groups'
+    const next = returnPath(route.query.next)
     await router.replace(auth.hasProfile ? next : { name: 'onboarding', query: { next } })
     signingIn.value = false
   } catch {
@@ -55,11 +58,11 @@ async function signIn(): Promise<void> {
 
 <template>
   <main class="login-page flex min-h-dvh flex-col px-6">
-    <div class="mx-auto my-auto w-full max-w-xs pt-12 text-center">
-      <TigerMascot :size="172" class="mx-auto" />
+    <div class="mx-auto my-auto w-full max-w-xs pt-8 text-center">
+      <TigerMascot :size="128" class="mx-auto" />
 
-      <h1 class="mt-5 text-4xl font-bold tracking-tight">Divvy</h1>
-      <p class="mt-3 text-base leading-relaxed text-muted">{{ t('login.tagline') }}</p>
+      <h1 class="mt-5 text-4xl font-bold tracking-tight">小虎奔奔</h1>
+      <p class="mt-3 text-base leading-relaxed text-muted">{{ t(invited ? 'invite.signInHint' : 'login.tagline') }}</p>
 
       <section
         v-if="embedded"
@@ -84,7 +87,7 @@ async function signIn(): Promise<void> {
         </button>
       </section>
 
-      <AppButton class="mt-9" block size="lg" :loading="signingIn" @click="signIn">
+      <AppButton class="mt-6" block size="lg" :loading="signingIn" @click="signIn">
         <template #icon>
           <svg class="size-4" viewBox="0 0 24 24" aria-hidden="true">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -96,7 +99,14 @@ async function signIn(): Promise<void> {
         {{ t('login.signIn') }}
       </AppButton>
 
-      <p class="mt-6 text-xs leading-relaxed text-faint">{{ t('login.secure') }}</p>
+      <figure v-if="!invited" class="mt-6 flex items-center gap-3 rounded-card border border-border bg-surface px-4 py-3 text-left">
+        <TripSticker pose="ledger-split" :size="56" />
+        <figcaption class="min-w-0 text-sm leading-relaxed">
+          <span class="block text-xs text-muted">{{ t('login.exampleTitle') }}</span>
+          {{ t('login.example') }}
+        </figcaption>
+      </figure>
+      <p class="mt-4 text-xs leading-relaxed text-faint">{{ t('login.secure') }}</p>
     </div>
     <AppFooter />
   </main>

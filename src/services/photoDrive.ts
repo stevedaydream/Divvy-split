@@ -73,7 +73,7 @@ async function backupFolder(): Promise<string> {
     const permissions = await (await driveRequest(`files/${fileId(candidate)}/permissions?fields=permissions(role)&pageSize=100`)).json()
     if (permissions.permissions?.length === 1 && permissions.permissions[0].role === 'owner') folderId = candidate
   }
-  if (!folderId) folderId = (await (await driveRequest('files?fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Divvy 相簿', mimeType: 'application/vnd.google-apps.folder', appProperties: { divvyKind: 'albumFolder' } }) })).json()).id
+  if (!folderId) folderId = (await (await driveRequest('files?fields=id', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: '小虎奔奔 相簿', mimeType: 'application/vnd.google-apps.folder', appProperties: { divvyKind: 'albumFolder' } }) })).json()).id
   return folderId
 }
 

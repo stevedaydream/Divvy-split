@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { ChevronDown, MapPin } from 'lucide-vue-next'
@@ -13,6 +13,7 @@ import { currencyForCountry, currencyName } from '@/data/currencies'
 import { detectLocation } from '@/lib/geo'
 import { useAuthStore } from '@/stores/auth'
 import { useToast } from '@/composables/useToast'
+import { returnPath, returnsToInvite } from '@/router/returnPath'
 import type { CurrencyCode } from '@/types/currency'
 
 const { t, locale } = useI18n()
@@ -23,7 +24,8 @@ const toast = useToast()
 
 const nickname = ref('')
 const country = ref('')
-const currency = ref<CurrencyCode>('USD')
+const suggestedCurrency: CurrencyCode = locale.value === 'zh-TW' ? 'TWD' : 'USD'
+const currency = ref<CurrencyCode>(suggestedCurrency)
 const bankName = ref('')
 const bankAccount = ref('')
 const lineId = ref('')
@@ -33,15 +35,23 @@ const countryPickerOpen = ref(false)
 const detecting = ref(false)
 const saving = ref(false)
 const error = ref('')
+const editing = auth.hasProfile
+const invited = computed(() => returnsToInvite(router, route.query.next))
+const showPayment = computed(() => editing && route.query.section === 'payment')
+const paymentSummary = ref<HTMLElement | null>(null)
 
-onMounted(() => {
+onMounted(async () => {
   const profile = auth.profile
   nickname.value = profile?.nickname || auth.user?.displayName || ''
   country.value = profile?.country ?? ''
-  currency.value = profile?.currency ?? 'USD'
+  currency.value = profile?.currency ?? suggestedCurrency
   bankName.value = profile?.payment?.bankName ?? ''
   bankAccount.value = profile?.payment?.bankAccount ?? ''
   lineId.value = profile?.payment?.lineId ?? ''
+  if (showPayment.value) {
+    await nextTick()
+    paymentSummary.value?.focus()
+  }
 })
 
 function pickCountry(code: string): void {
@@ -66,6 +76,7 @@ async function detect(): Promise<void> {
 }
 
 async function submit(): Promise<void> {
+  if (saving.value) return
   if (!nickname.value.trim()) {
     error.value = t('onboarding.nicknameRequired')
     return
@@ -87,7 +98,7 @@ async function submit(): Promise<void> {
     })
 
     toast.success(t('onboarding.saved'))
-    const next = typeof route.query.next === 'string' ? route.query.next : '/groups'
+    const next = returnPath(route.query.next, editing ? '/profile' : '/groups')
     await router.replace(next)
   } catch {
     toast.error(t('common.somethingWrong'))
@@ -101,7 +112,7 @@ async function submit(): Promise<void> {
   <main class="mx-auto min-h-dvh w-full max-w-md px-6 py-12">
     <header>
       <h1 class="text-2xl font-semibold tracking-tight">{{ t('onboarding.title') }}</h1>
-      <p class="mt-1.5 text-sm text-muted">{{ t('onboarding.subtitle') }}</p>
+      <p class="mt-1.5 text-sm text-muted">{{ t(invited ? 'invite.finishProfileHint' : 'onboarding.subtitle') }}</p>
     </header>
 
     <form class="mt-9 space-y-6" @submit.prevent="submit">
@@ -113,19 +124,6 @@ async function submit(): Promise<void> {
           autocomplete="nickname"
         />
         <p v-if="error" class="text-xs text-negative">{{ error }}</p>
-      </AppField>
-
-      <AppField :label="t('onboarding.country')">
-        <button
-          type="button"
-          class="ui-control flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors hover:border-border-strong"
-          @click="countryPickerOpen = true"
-        >
-          <span :class="country ? 'font-medium' : 'text-faint'">
-            {{ country ? countryName(country, locale) : t('onboarding.countryPlaceholder') }}
-          </span>
-          <ChevronDown class="size-4 shrink-0 text-muted" />
-        </button>
       </AppField>
 
       <AppField :label="t('onboarding.homeCurrency')">
@@ -145,8 +143,26 @@ async function submit(): Promise<void> {
         </div>
       </AppField>
 
-      <section class="paper-card rounded-card border border-border bg-surface-2 p-4">
-        <h2 class="text-sm font-medium">{{ t('onboarding.paymentTitle') }}</h2>
+      <details class="rounded-xl border border-border px-3.5">
+        <summary class="min-h-11 cursor-pointer py-3 text-sm font-medium">{{ t('onboarding.optionalSettings') }}</summary>
+        <div class="pb-3">
+          <AppField :label="t('onboarding.country')">
+            <button
+              type="button"
+              class="ui-control flex h-11 w-full items-center justify-between rounded-xl border border-border bg-surface px-3.5 text-sm transition-colors hover:border-border-strong"
+              @click="countryPickerOpen = true"
+            >
+              <span :class="country ? 'font-medium' : 'text-faint'">
+                {{ country ? countryName(country, locale) : t('onboarding.countryPlaceholder') }}
+              </span>
+              <ChevronDown class="size-4 shrink-0 text-muted" />
+            </button>
+          </AppField>
+        </div>
+      </details>
+
+      <details v-if="editing" :open="showPayment" class="rounded-xl border border-border bg-surface px-3.5 py-2">
+        <summary ref="paymentSummary" class="min-h-10 cursor-pointer py-2 text-sm font-medium">{{ t('onboarding.paymentTitle') }}</summary>
         <p class="mt-1 text-xs leading-relaxed text-muted">{{ t('onboarding.paymentHint') }}</p>
 
         <div class="mt-4 space-y-3">
@@ -155,10 +171,10 @@ async function submit(): Promise<void> {
           <AppInput v-model="lineId" autocomplete="off" :placeholder="t('onboarding.lineId')" />
           <p class="text-[11px] leading-relaxed text-faint">{{ t('onboarding.lineIdHint') }}</p>
         </div>
-      </section>
+      </details>
 
       <AppButton type="submit" block size="lg" :loading="saving">
-        {{ t('onboarding.submit') }}
+        {{ t(editing ? 'common.save' : invited ? 'invite.continueToJoin' : 'onboarding.submit') }}
       </AppButton>
     </form>
 

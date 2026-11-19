@@ -153,7 +153,7 @@ async function save(): Promise<void> {
       })
       toast.success(t('groups.updated'))
     } else {
-      await createGroup({
+      const id = await createGroup({
         name,
         currency: form.value.currency,
         destination: form.value.destination,
@@ -166,6 +166,9 @@ async function save(): Promise<void> {
         },
       })
       toast.success(t('groups.created'))
+      formOpen.value = false
+      await router.push({ name: 'group', params: { id }, query: { tab: 'ledger' } })
+      return
     }
     formOpen.value = false
   } catch {
@@ -235,7 +238,7 @@ async function toggleHidden(): Promise<void> {
   <AppShell nav>
     <TopBar :title="t('groups.title')" />
     <section class="trip-welcome mx-5 mt-5" aria-hidden="true">
-      <div><p class="trip-welcome__title">Divvy</p><p class="trip-welcome__copy">{{ t('login.tagline') }}</p></div>
+      <div><p class="trip-welcome__title">小虎奔奔</p><p class="trip-welcome__copy">{{ t('login.tagline') }}</p></div>
       <TigerMascot pose="map" :size="100" />
     </section>
 

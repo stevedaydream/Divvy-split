@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1500" height="1150" viewBox="0 0 1500 1150">
-<title>Divvy 小虎旅行手帳介面草圖</title><desc>三個手機畫面展示揪團列表、旅行工具與結清完成，下方為布貼按鈕與配色。示範資料，非正式介面。</desc>
+<title>小虎奔奔旅行手帳介面草圖</title><desc>三個手機畫面展示揪團列表、旅行工具與結清完成，下方為布貼按鈕與配色。示範資料，非正式介面。</desc>
 <defs>
  <style>text{font-family:'Microsoft JhengHei','PingFang TC',sans-serif;fill:#3E3A38}.h{font-size:25px;font-weight:700}.body{font-size:17px}.sub{font-size:14px;fill:#706863}.label{font-size:16px;font-weight:600}.card{fill:white;stroke:#3E3A38;stroke-width:3}.line{fill:none;stroke:#594238;stroke-width:5;stroke-linecap:round;stroke-linejoin:round}.stitch{fill:none;stroke:white;stroke-width:2;stroke-dasharray:6 5}</style>
  <g id="tiger" stroke="#594238" stroke-width="5" stroke-linejoin="round" stroke-linecap="round">
@@ -21,7 +21,7 @@
  <g id="nav"><path d="M0 0h386" stroke="#3E3A38" stroke-width="2"/><path d="M12 7h362" stroke="#D9CFC2" stroke-width="2" stroke-dasharray="6 5"/><rect x="32" y="17" width="61" height="34" rx="17" fill="#A7D4E5"/><text x="63" y="40" text-anchor="middle" font-size="23">♧</text><text x="193" y="40" text-anchor="middle" font-size="23">＋</text><circle cx="322" cy="28" r="7" fill="none" stroke="#3E3A38" stroke-width="2"/><path d="M310 47q0-17 24 0" fill="none" stroke="#3E3A38" stroke-width="2"/><text x="63" y="69" text-anchor="middle" class="sub">揪團</text><text x="193" y="69" text-anchor="middle" class="sub">計算機</text><text x="322" y="69" text-anchor="middle" class="sub">我的</text></g>
 </defs>
 <rect width="1500" height="1150" fill="#F3EDE3"/>
-<text x="55" y="61" font-size="33" font-weight="700">Divvy × 小虎・旅行手帳</text><text x="56" y="95" class="body">圓滾滾的旅行夥伴　／　元件與頁面草圖　／　示範資料</text>
+<text x="55" y="61" font-size="33" font-weight="700">小虎奔奔・旅行手帳</text><text x="56" y="95" class="body">圓滾滾的旅行夥伴　／　元件與頁面草圖　／　示範資料</text>
 <text x="55" y="142" class="label">01 揪團首頁</text><text x="55" y="166" class="sub">以角色迎接，操作保留清楚層級</text><g transform="translate(55,185)"><use href="#phone"/><text x="24" y="67" class="h">一起出發吧！</text><text x="24" y="97" class="sub">把旅程與每一筆花費整理好</text><use href="#map" transform="translate(258,38) scale(.48)"/>
 <text x="24" y="163" class="h">我的揪團</text><rect x="309" y="132" width="54" height="44" rx="14" fill="#3E3A38"/><rect x="307" y="128" width="54" height="44" rx="14" fill="#A7D4E5" stroke="#3E3A38" stroke-width="2"/><rect x="312" y="133" width="44" height="34" rx="10" class="stitch"/><text x="334" y="159" font-size="29" text-anchor="middle">＋</text>
 <rect x="24" y="190" width="82" height="34" rx="17" fill="#E7F3F8" stroke="#3E3A38" stroke-width="2"/><text x="65" y="213" class="label" text-anchor="middle">進行中</text><text x="129" y="213" class="sub">已結束</text><text x="219" y="213" class="sub">已隱藏</text>

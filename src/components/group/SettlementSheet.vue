@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { ArrowRight, PartyPopper } from 'lucide-vue-next'
+import { ArrowRight } from 'lucide-vue-next'
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+import TripSticker from '@/components/ui/TripSticker.vue'
 import AppAvatar from '@/components/ui/AppAvatar.vue'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
 import AppSheet from '@/components/ui/AppSheet.vue'
@@ -17,6 +20,11 @@ const props = defineProps<{
   locale: string
 }>()
 
+const route = useRoute()
+const needsPaymentDetails = computed(() =>
+  props.transfers.some(transfer => transfer.to === props.uid) && !props.group.members[props.uid]?.payment,
+)
+
 const emit = defineEmits<{ close: []; record: [transfer: Transfer] }>()
 
 /** The payer, the recipient, or anyone on behalf of a guest may record a transfer. */
@@ -31,14 +39,28 @@ function nameOf(id: string): string {
 
 <template>
   <AppSheet :open="open" :title="$t('settle.title')" @close="emit('close')">
-    <p class="-mt-1 mb-5 text-xs leading-relaxed text-muted">{{ $t('settle.subtitle') }}</p>
+    <div class="-mt-1 mb-5 flex items-center gap-3">
+      <TripSticker v-if="transfers.length" pose="ledger-split" :size="56" />
+      <p class="text-xs leading-relaxed text-muted">{{ $t('settle.subtitle') }}</p>
+    </div>
+
+    <div v-if="needsPaymentDetails" class="mb-4 rounded-xl border border-border bg-surface-2 p-3 text-sm">
+      <p>{{ $t('settle.addYourPaymentHint') }}</p>
+      <RouterLink
+        :to="{ name: 'onboarding', query: { section: 'payment', next: route.fullPath } }"
+        class="inline-flex min-h-11 items-center font-semibold text-accent underline"
+      >
+        {{ $t('settle.addYourPayment') }}
+      </RouterLink>
+    </div>
 
     <AppEmptyState
       v-if="!transfers.length"
-      :icon="PartyPopper"
       :title="$t('settle.allSettled')"
       :description="$t('settle.allSettledHint')"
-    />
+    >
+      <template #illustration><TripSticker pose="ledger-settled" :size="96" /></template>
+    </AppEmptyState>
 
     <ul v-else class="space-y-2">
       <li v-for="(transfer, index) in transfers" :key="index">

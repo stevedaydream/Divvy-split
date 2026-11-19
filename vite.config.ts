@@ -31,9 +31,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['icon.svg'],
       manifest: {
-        name: 'Divvy — Group Expenses',
-        short_name: 'Divvy',
-        description: 'Split group expenses across currencies.',
+        name: '小虎奔奔｜旅行記帳・揪團分帳',
+        short_name: '小虎奔奔',
+        description: '旅行記帳與跨幣別揪團分帳。一起出發，旅費好分。',
         theme_color: '#FFFCF5',
         background_color: '#FFFCF5',
         display: 'standalone',
@@ -46,7 +46,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        globPatterns: ['**/*.{js,css,html,svg,png,webp,woff2}'],
         navigateFallbackDenylist: [/^\/__\//],
       },
     }),

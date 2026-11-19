@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { returnPath } from './returnPath'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -43,8 +44,7 @@ router.beforeEach(async (to) => {
   if (to.name === 'login') {
     // Back from a redirect sign-in: continue to where the user was headed.
     // Only same-site paths, so ?next= cannot bounce anyone to another site.
-    const next = to.query.next
-    return typeof next === 'string' && next.startsWith('/') && !next.startsWith('//') ? next : { name: 'groups' }
+    return returnPath(to.query.next)
   }
 
   return true

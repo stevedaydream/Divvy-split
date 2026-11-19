@@ -35,7 +35,7 @@ async function save() { loading.value = true; await new Promise(resolve => setTi
   <CalculatorView v-if="route.path === '/calculator'" />
   <AppShell v-else nav>
     <TopBar :title="route.path === '/profile' ? t('nav.profile') : t('groups.title')" />
-    <section class="trip-welcome mx-5 mt-5"><div><p class="trip-welcome__title">Divvy</p><p class="trip-welcome__copy">{{ t('login.tagline') }}</p></div><TigerMascot pose="map" :size="100" /></section>
+    <section class="trip-welcome mx-5 mt-5"><div><p class="trip-welcome__title">小虎奔奔</p><p class="trip-welcome__copy">{{ t('login.tagline') }}</p></div><TigerMascot pose="map" :size="100" /></section>
     <div class="space-y-6 px-5 py-5">
       <nav class="scope-tabs flex gap-1"><button class="ui-control" aria-pressed="true">{{ t('travel.active') }}</button><button class="ui-control" aria-pressed="false">{{ t('travel.archived') }}</button><button class="ui-control" aria-pressed="false">{{ t('travel.hidden') }}</button></nav>
       <GroupCard :group="group" @open="sheet = true" @options="sheet = true" />

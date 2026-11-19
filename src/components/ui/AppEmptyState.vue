@@ -7,7 +7,8 @@ defineProps<{ icon?: Component; title: string; description?: string; mascot?: bo
 
 <template>
   <div class="flex flex-col items-center justify-center rounded-card border-2 border-dashed border-border px-6 py-14 text-center">
-    <TigerMascot v-if="mascot" :size="112" class="mb-3" />
+    <div v-if="$slots.illustration" class="mb-3"><slot name="illustration" /></div>
+    <TigerMascot v-else-if="mascot" :size="112" class="mb-3" />
     <component :is="icon" v-else-if="icon" class="mb-3 size-7 text-faint" :stroke-width="1.5" />
     <p class="text-lg font-semibold text-fg">{{ title }}</p>
     <p v-if="description" class="mt-1 max-w-[28ch] text-sm leading-relaxed text-muted">

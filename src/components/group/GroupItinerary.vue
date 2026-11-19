@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { AlertTriangle, BedDouble, CalendarDays, Image, MapPin, Plane, Plus, ReceiptText, Sparkles } from 'lucide-vue-next'
+import { AlertTriangle, BedDouble, Image, MapPin, Plane, Plus, ReceiptText, Sparkles } from 'lucide-vue-next'
 import AppButton from '@/components/ui/AppButton.vue'
+import TripSticker from '@/components/ui/TripSticker.vue'
 import { categoryEmoji } from '@/data/categories'
 import { formatDay, todayIso } from '@/lib/dates'
 import { hasTripDates, layoutDays, mapsUrl, totalEstimate } from '@/lib/itinerary'
@@ -65,11 +66,13 @@ function saveDates(): void {
 <template>
   <div class="space-y-5 px-5 pb-28 pt-5">
     <section v-if="!hasDates && !readonly" class="paper-card rounded-card border border-border bg-surface p-5 shadow-card">
-      <div class="flex items-center gap-2">
-        <CalendarDays class="size-4 text-accent" />
-        <h2 class="text-sm font-semibold">{{ t('itinerary.setDatesTitle') }}</h2>
+      <div class="flex items-center gap-3">
+        <TripSticker pose="itinerary-departure" :size="64" />
+        <div class="min-w-0">
+          <h2 class="text-sm font-semibold">{{ t('itinerary.setDatesTitle') }}</h2>
+          <p class="mt-1 text-xs leading-relaxed text-muted">{{ t('itinerary.setDatesHint') }}</p>
+        </div>
       </div>
-      <p class="mt-1 text-xs leading-relaxed text-muted">{{ t('itinerary.setDatesHint') }}</p>
       <div class="mt-4 grid grid-cols-2 gap-3">
         <label class="space-y-1.5">
           <span class="text-xs font-medium text-muted">{{ t('itinerary.startDate') }}</span>
@@ -94,12 +97,16 @@ function saveDates(): void {
     </section>
 
     <template v-else>
-      <section class="flex items-center justify-between gap-3">
-        <div class="min-w-0">
+      <section class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex min-w-0 flex-1 items-center gap-2">
+          <TripSticker :pose="items.length ? 'itinerary-waypoint' : 'itinerary-map'" :size="52" />
+          <div class="min-w-0">
+
           <p class="text-sm font-medium">{{ t('itinerary.summary', { days: layout.days.length }) }}</p>
           <p v-if="estimate" class="tabular text-xs text-muted">
             {{ t('itinerary.estimateTotal', { amount: money(estimate), currency: group.currency }) }}
           </p>
+          </div>
         </div>
         <button
           v-if="!readonly"

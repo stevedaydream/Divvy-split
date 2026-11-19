@@ -130,6 +130,8 @@ export default {
   },
 
   login: {
+    exampleTitle: "分帳範例",
+    example: "兩人午餐共 ¥2,400。你先付全額，旅伴還你 ¥1,200。",
     tagline: '跨幣別的群組分帳，簡單記一筆。',
     signIn: '使用 Google 繼續',
     secure: '資料存放在 Google Firebase，只有你和群組成員看得到。',
@@ -143,6 +145,7 @@ export default {
   },
 
   onboarding: {
+    optionalSettings: "其他設定（選填）",
     title: '設定個人檔案',
     subtitle: '群組成員會看到這些資訊。',
     nickname: '顯示名稱',
@@ -217,11 +220,18 @@ export default {
     notMe: '都不是我',
   },
   invite: {
+    signInHint: "登入後會接續處理旅伴的揪團邀請。",
+    finishProfileHint: "設定顯示名稱與幣別後，就會接續加入揪團。",
+    continueToJoin: "繼續加入揪團",
+    askNewLink: "請旅伴重新傳送邀請連結。",
+    goToGroups: "前往揪團",
+    joinedGroup: "已加入揪團。",
+    joinFailed: "暫時無法加入揪團，請再試一次。",
     action: '邀請成員',
     companion: '邀請同行者',
     linkHint: '傳到 LINE 群組，點連結就能加入。',
     recent: '最近同行者',
-    recentHint: '曾和你在同一個群組的人。對方下次打開 Divvy 就會看到邀請。',
+    recentHint: '曾和你在同一個群組的人。對方下次打開 小虎奔奔 就會看到邀請。',
     noRecent: '還沒有和其他人一起分過帳。',
     sharedGroup: '一起在「{name}」',
     send: '邀請',
@@ -245,6 +255,7 @@ export default {
   },
 
   group: {
+    firstEntry: "記第一筆",
     total: '總支出',
     everyone: '全部',
     ledger: '帳目',
@@ -279,6 +290,8 @@ export default {
   },
 
   settle: {
+    addYourPaymentHint: "有旅伴需要還款給你，你可以補上收款方式。",
+    addYourPayment: "設定收款資訊",
     title: '結算',
     subtitle: '用最少的轉帳次數結清所有欠款。',
     allSettled: '大家都結清了',
@@ -455,7 +468,7 @@ export default {
     getKey: '到 Google AI Studio 取得免費 Key',
     keyPlaceholder: '貼上 API Key',
     forgetKey: '從這台裝置移除 API Key',
-    fallbackUsed: '你的 Gemini API 額度已用盡，這次改由 Divvy 備援完成。你的額度預計在 {time} 後恢復，在那之前 AI 導遊會暫停。',
+    fallbackUsed: '你的 Gemini API 額度已用盡，這次改由 小虎奔奔 備援完成。你的額度預計在 {time} 後恢復，在那之前 AI 導遊會暫停。',
     quotaBlocked: '你的 Gemini API 額度已用盡，預計在 {time} 後恢復。',
     quotaNoFallback: '你的 Gemini API 額度已用盡，備援目前也無法使用。預計在 {time} 後可再使用。',
   },
@@ -466,7 +479,7 @@ export default {
     hint: '貼上旅行社的行前說明或朋友傳的清單，也可以上傳截圖。要帶的東西會放進你的行李清單，要辦的事放進共同待辦。',
     placeholder: '貼上清單內容（選填）',
     addImage: '加入截圖',
-    imageHint: '最多 {max} 張，只會送給 Gemini 辨識，不會存到 Divvy。',
+    imageHint: '最多 {max} 張，只會送給 Gemini 辨識，不會存到 小虎奔奔。',
     run: '整理清單',
     reviewHint: '勾選要加入的項目；點右邊的標籤可以在「行李」和「待辦」之間切換。已經在清單裡的項目會自動略過。',
     toPacking: '行李',

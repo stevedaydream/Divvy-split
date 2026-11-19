@@ -130,6 +130,8 @@ export default {
   },
 
   login: {
+    exampleTitle: "Example split",
+    example: "Lunch for two costs ¥2,400. You pay up front, and your companion owes you ¥1,200.",
     tagline: 'Split group expenses, in any currency.',
     signIn: 'Continue with Google',
     secure: 'Stored on Google Firebase, visible only to you and your groups.',
@@ -143,6 +145,7 @@ export default {
   },
 
   onboarding: {
+    optionalSettings: "Other settings (optional)",
     title: 'Set up your profile',
     subtitle: 'This is how group members will see you.',
     nickname: 'Display name',
@@ -217,11 +220,18 @@ export default {
     notMe: "None of these is me",
   },
   invite: {
+    signInHint: "Sign in to continue with your travel companion’s invitation.",
+    finishProfileHint: "Set your display name and currency to continue joining the group.",
+    continueToJoin: "Continue to join",
+    askNewLink: "Ask your travel companion to send a fresh invitation link.",
+    goToGroups: "Go to groups",
+    joinedGroup: "You joined the group.",
+    joinFailed: "Could not join the group right now. Please try again.",
     action: 'Invite',
     companion: 'Invite a travel companion',
     linkHint: 'Post it in a chat; anyone who taps it can join.',
     recent: 'Recent companions',
-    recentHint: 'People you have shared a group with. They will see the invitation next time they open Divvy.',
+    recentHint: 'People you have shared a group with. They will see the invitation next time they open 小虎奔奔.',
     noRecent: 'You have not split expenses with anyone yet.',
     sharedGroup: 'Together in {name}',
     send: 'Invite',
@@ -245,6 +255,7 @@ export default {
   },
 
   group: {
+    firstEntry: "Record your first expense",
     total: 'Total spent',
     everyone: 'Everyone',
     ledger: 'Ledger',
@@ -279,6 +290,8 @@ export default {
   },
 
   settle: {
+    addYourPaymentHint: "A companion owes you money. Add payment details to help them pay you back.",
+    addYourPayment: "Add payment details",
     title: 'Settle up',
     subtitle: 'The fewest transfers that clear every balance.',
     allSettled: 'Everyone is square',
@@ -455,7 +468,7 @@ export default {
     getKey: 'Get a free key from Google AI Studio',
     keyPlaceholder: 'Paste API key',
     forgetKey: 'Remove the API key from this device',
-    fallbackUsed: 'Your Gemini API quota ran out, so Divvy\'s backup finished this request. Your quota should be back at {time}; the guide pauses until then.',
+    fallbackUsed: 'Your Gemini API quota ran out, so 小虎奔奔\'s backup finished this request. Your quota should be back at {time}; the guide pauses until then.',
     quotaBlocked: 'Your Gemini API quota is used up. It should be back at {time}.',
     quotaNoFallback: 'Your Gemini API quota is used up and the backup is unavailable. Try again after {time}.',
   },
@@ -466,7 +479,7 @@ export default {
     hint: 'Paste a travel agency\'s briefing or a friend\'s list, or add screenshots. Things to bring go to your packing list; things to do go to shared to-dos.',
     placeholder: 'Paste the list (optional)',
     addImage: 'Add screenshot',
-    imageHint: 'Up to {max}. Sent to Gemini to read, never stored in Divvy.',
+    imageHint: 'Up to {max}. Sent to Gemini to read, never stored in 小虎奔奔.',
     run: 'Tidy up the list',
     reviewHint: 'Tick what to add; tap the tag to switch between packing and to-do. Lines already on a list are skipped.',
     toPacking: 'Pack',

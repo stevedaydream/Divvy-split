@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import TigerMascot from '@/components/ui/TigerMascot.vue'
+import TripSticker from '@/components/ui/TripSticker.vue'
 import { computed, onScopeDispose, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ImagePlus, QrCode, Trash2, X } from 'lucide-vue-next'
@@ -97,7 +97,9 @@ function clearQr(slot: QrSlot): void {
 
 <template>
   <div class="space-y-4 px-5 pb-28 pt-5">
-    <div class="tools-heading"><TigerMascot :size="72" /><div class="flex justify-end"><button type="button" class="ui-control text-xs font-medium text-accent" @click="templatesOpen = true">{{ t('templates.title') }}</button></div></div>
+    <div class="flex justify-end">
+      <button type="button" class="ui-control text-xs font-medium text-accent" @click="templatesOpen = true">{{ t('templates.title') }}</button>
+    </div>
     <PackingTemplateSheet :open="templatesOpen" :uid="uid" :group-id="group.id" :items="packing" @close="templatesOpen = false" />
     <ChecklistCard
       :title="t('tools.packing')"
@@ -110,7 +112,9 @@ function clearQr(slot: QrSlot): void {
       @remove="remove('packing', $event)"
       @preset="addPackingPreset"
       @action="importOpen = true"
-    />
+    >
+      <template #illustration><TripSticker pose="tools-packing" :size="50" /></template>
+    </ChecklistCard>
 
     <ChecklistImportSheet
       :open="importOpen"
@@ -130,7 +134,9 @@ function clearQr(slot: QrSlot): void {
       @add="add('todo', $event)"
       @toggle="toggle('todo', $event)"
       @remove="remove('todo', $event)"
-    />
+    >
+      <template #illustration><TripSticker pose="tools-checklist" :size="50" /></template>
+    </ChecklistCard>
 
     <section class="paper-card rounded-card border border-border bg-surface p-4 shadow-card">
       <div class="flex items-center gap-2">

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import TripSticker from '@/components/ui/TripSticker.vue'
 import { computed, onScopeDispose, ref, watch } from 'vue'
 import type { QueryDocumentSnapshot } from 'firebase/firestore'
 import { useI18n } from 'vue-i18n'
@@ -159,11 +160,11 @@ async function downloadSelection(): Promise<void> {
     if (selectedPhotos.value.length > MAX_PHOTO_BATCH) throw new Error('archive-limit')
     const photos = await localCopies(selectedPhotos.value)
     if (photos.length === 1) downloadPhotoBlob(photos[0]!.blob, photos[0]!.name)
-    else downloadPhotoBlob(await photoArchive(photos), 'Divvy-photos.zip')
+    else downloadPhotoBlob(await photoArchive(photos), '小虎奔奔-photos.zip')
     externalDownloads.value = [...new Set([...externalDownloads.value, ...photos.map((photo) => photo.id)])]
   })
 }
-async function exportSelection(): Promise<void> { await action(async () => { downloadPhotoBlob(await photoArchive(await localCopies(selectedPhotos.value)), 'Divvy-album.zip') }) }
+async function exportSelection(): Promise<void> { await action(async () => { downloadPhotoBlob(await photoArchive(await localCopies(selectedPhotos.value)), '小虎奔奔-album.zip') }) }
 async function importArchive(event: Event): Promise<void> {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]; input.value = ''
@@ -222,7 +223,10 @@ async function restoreBackups(): Promise<void> {
 <template>
   <div class="space-y-4 px-4 py-5">
     <section class="paper-card space-y-3 rounded-card border border-border bg-surface p-4">
-      <h2 class="text-sm font-semibold">{{ t(group ? 'photos.sharing' : 'photos.localTitle') }}</h2>
+      <header class="flex items-center gap-2">
+        <TripSticker pose="photos-album" :size="48" />
+        <h2 class="text-sm font-semibold">{{ t(group ? 'photos.sharing' : 'photos.localTitle') }}</h2>
+      </header>
       <p class="text-xs leading-relaxed text-muted">{{ t(group ? 'photos.sharingHint' : 'photos.localHint') }}</p>
       <p class="text-xs leading-relaxed text-muted">{{ t('photos.driveHint') }}</p>
       <div class="flex flex-wrap gap-2">
@@ -277,7 +281,10 @@ async function restoreBackups(): Promise<void> {
     </section>
     <p v-if="busy || loading" role="status" class="text-sm text-muted">{{ t('common.loading') }} {{ progress }}</p>
     <p v-if="error" role="alert" class="whitespace-pre-wrap text-xs text-negative">{{ error }}</p>
-    <p v-if="!loading && !visible.length" class="py-8 text-center text-sm text-muted">{{ t('photos.empty') }}</p>
+    <div v-if="!loading && !error && !visible.length" class="flex flex-col items-center gap-2 py-6 text-center">
+      <TripSticker pose="photos-camera" :size="84" />
+      <p class="text-sm text-muted">{{ t('photos.empty') }}</p>
+    </div>
     <section v-for="section in sections" :key="section.key" class="space-y-2">
       <h3 class="text-sm font-semibold">{{ !group ? `${section.name} · ` : '' }}{{ section.day ? `${t('photos.day', { day: section.day })} · ` : '' }}{{ section.date }}</h3>
       <div class="grid grid-cols-2 gap-3">

@@ -218,7 +218,6 @@ input, textarea { caret-color: var(--c-accent-ink); }
 .trip-welcome > div { min-width: 0; }
 .trip-welcome__title { font-size: 28px; font-weight: 800; line-height: 1.2; }
 .trip-welcome__copy { max-width: 24ch; font-size: 14px; line-height: 1.7; color: var(--c-muted); margin-top: 6px; }
-.tools-heading { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--c-border); padding-bottom: 8px; }
 .login-page { background: var(--c-bg); }
 .login-page h1 { color: var(--c-fg); }
 .paper-card { border: 3px solid var(--c-border-strong); padding: 20px; box-shadow: var(--shadow-card); }

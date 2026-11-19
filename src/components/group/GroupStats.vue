@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { BarChart3, ChartLine, ChartPie, TrendingUp } from 'lucide-vue-next'
 import AppEmptyState from '@/components/ui/AppEmptyState.vue'
+import TripSticker from '@/components/ui/TripSticker.vue'
 import ChartCanvas, { type ChartSeries } from '@/components/charts/ChartCanvas.vue'
 import { categoryColor, categoryEmoji } from '@/data/categories'
 import { useTheme } from '@/composables/useTheme'
@@ -160,10 +161,11 @@ const DAY_CHARTS = [
 
     <AppEmptyState
       v-if="!items.length"
-      :icon="BarChart3"
       :title="t('stats.empty')"
       :description="t('stats.emptyHint')"
-    />
+    >
+      <template #illustration><TripSticker pose="stats-bars" :size="96" /></template>
+    </AppEmptyState>
 
     <template v-else>
       <section class="paper-card rounded-card border border-border bg-surface p-5 shadow-card">
@@ -186,7 +188,10 @@ const DAY_CHARTS = [
 
       <section class="paper-card rounded-card border border-border bg-surface p-5 shadow-card">
         <header class="mb-4 flex items-center justify-between">
-          <h2 class="text-sm font-semibold">{{ t('stats.byCategory') }}</h2>
+          <div class="flex min-w-0 items-center gap-2">
+            <TripSticker pose="stats-pie" :size="44" />
+            <h2 class="text-sm font-semibold">{{ t('stats.byCategory') }}</h2>
+          </div>
           <div class="flex gap-1" role="group" :aria-label="t('stats.chartType')">
             <button
               v-for="option in CATEGORY_CHARTS"
